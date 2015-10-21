@@ -11,12 +11,37 @@ using namespace std;
 const int WT = 640;
 const int HT = 480;
 
-char triangleVertexShaderName[] = "./shaders/VerticesShader.hlsl";
-char triangleFragmentShaderName[] = "./shaders/FragmentShader.hlsl";
+char triangleVertexShaderName[] = "../shaders/VerticesShader.hlsl";
+char triangleFragmentShaderName[] = "../shaders/FragmentShader.hlsl";
+char squareFragmentShaderName[] = "../shaders/SquareFragmentShader.hlsl";
+
+typedef enum
+{
+	FTSQUARE, FTTRGL, FTCNT
+} FIGURE_T;
+
+float triangleVertices[] =
+{
+	0.3f, 1.0f, 0.0f,
+	-0.8f, -0.45f, 0.0f, //left
+	0.6f, -1.0f, 0.0f
+};
+float squareVertices[] =
+{
+	-0.9f, 0.9f, 0.0f, //lu
+	-0.1f, 0.9f, 0.0f, //ru
+	-0.1f, 0.1f, 0.0f, //rd
+	-0.9f, 0.1f, 0.0f  //ld
+};
 
 GLint readCompileShader(char *fileName, GLenum shaderType)
 {
 	ifstream fileToRead(fileName);
+	if (!fileToRead)
+	{
+		cout << "No such file: " << fileName << endl;
+		exit(0);
+	}
 	fileToRead.seekg(0, fileToRead.end);
 	const GLint shaderLength[1] = {fileToRead.tellg()};
 	fileToRead.seekg(0, fileToRead.beg);
@@ -46,17 +71,38 @@ GLint readCompileShader(char *fileName, GLenum shaderType)
 }
 
 GLuint triangleShaderProgram;
-GLuint triangleVertexArray;
-
 GLuint squareShaderProgram;
+GLuint *vertexArrays;
 GLuint squareVertexArray;
+
+GLuint *buffer;
+
+GLint attribArray;
 
 void Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
+
 	glUseProgram(triangleShaderProgram);
-	glBindVertexArray(triangleVertexArray);
+	//attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
+	glBindVertexArray(vertexArrays[FTTRGL]);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer[FTTRGL]);
+	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), triangleVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(attribArray);
+	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glUseProgram(squareShaderProgram);
+	//attribArray = glGetAttribLocation(squareShaderProgram, "vertexPosition");
+	glBindVertexArray(vertexArrays[FTSQUARE]);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer[FTSQUARE]);
+	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), squareVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(attribArray);
+	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	glUseProgram(0);
 	glBindVertexArray(0);
 	glutSwapBuffers();
@@ -96,42 +142,25 @@ int main(int argc, char** argv)
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(CAPTION);
 	glutDisplayFunc(Render);
-	//glutPassiveMotionFunc(MouseMove);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
 		return 1;
 
-	float triangleVertices[] =
-	{
-		0.3f, 1.0f, 0.0f,
-		-0.8f, -0.45f, 0.0f, //left
-		0.6f, -1.0f, 0.0f
-	};
-
-	float squareVertices[] =
-	{
-		-0.9f, -0.9f, 0.0f, //lu
-		-0.1f, -0.9f, 0.0f, //ru
-		-0.1f, -1.0f, 0.0f, //rd
-		-0.9f, -0.1f, 0.0f  //ld
-	};
-
 	triangleShaderProgram = CreateProgram(
 		triangleVertexShaderName, GL_VERTEX_SHADER,
 		triangleFragmentShaderName, GL_FRAGMENT_SHADER);
 
-	glGenVertexArrays(1, &triangleVertexArray);
-	glBindVertexArray(triangleVertexArray);
+	squareShaderProgram = CreateProgram(
+		triangleVertexShaderName, GL_VERTEX_SHADER,
+		squareFragmentShaderName, GL_FRAGMENT_SHADER);
 
-	GLuint buffer = 0;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), triangleVertices, GL_STATIC_DRAW);
-
-	GLint attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
+	vertexArrays = new GLuint[FTCNT];
+	glGenVertexArrays(FTCNT, vertexArrays);
+	buffer = new GLuint[FTCNT];
+	glGenBuffers(FTCNT, buffer);
+	attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
 	glEnableVertexAttribArray(attribArray);
-	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
 
