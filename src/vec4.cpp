@@ -16,46 +16,13 @@ Vec4::Vec4() : Mat(4, 1) {
 
 }
 
-
-
-
+Vec4 Vec4::operator*(Vec4 v) {
+	Vec4 result = Vec4();
+	for(int i = 0; i < this->width*this->height; i++)
+		result[i] = this->data[i] * v[i];
+	return result;
+}
 
 Vec4::~Vec4() {
 	delete [] this->data;
-}
-
-float Vec4::Length() {
-	return sqrt(DegreedElSum(2));
-}
-
-float Vec4::x() {
-	return this->data[0];
-}
-
-float Vec4::x(float value) {
-	return this->data[0] = value;
-}
-
-float Vec4::y() {
-	return this->data[1];
-}
-
-float Vec4::y(float value) {
-	return this->data[1] = value;
-}
-
-float Vec4::z() {
-	return this->data[2];
-}
-
-float Vec4::z(float value) {
-	return this->data[2] = value;
-}
-
-float Vec4::w() {
-	return this->data[3];
-}
-
-float Vec4::w(float value) {
-	return this->data[3] = value;
 }
