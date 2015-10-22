@@ -3,6 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "vec4.hpp"
+#include "mat4.hpp"
 
 #define CAPTION ("Shch")
 
@@ -15,8 +17,7 @@ char triangleVertexShaderName[] = "../shaders/VerticesShader.hlsl";
 char triangleFragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char squareFragmentShaderName[] = "../shaders/SquareFragmentShader.hlsl";
 
-typedef enum
-{
+typedef enum {
 	FTSQUARE, FTTRGL, FTCNT
 } FIGURE_T;
 
@@ -34,11 +35,9 @@ float squareVertices[] =
 	-0.9f, 0.1f, 0.0f  //ld
 };
 
-GLint readCompileShader(char *fileName, GLenum shaderType)
-{
+GLint readCompileShader(char *fileName, GLenum shaderType) {
 	ifstream fileToRead(fileName);
-	if (!fileToRead)
-	{
+	if (!fileToRead) {
 		cout << "No such file: " << fileName << endl;
 		exit(0);
 	}
@@ -54,8 +53,7 @@ GLint readCompileShader(char *fileName, GLenum shaderType)
 	glCompileShader(shaderId);
 	GLint is_compiled;
 	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &is_compiled);
-	if (!is_compiled)
-	{
+	if (!is_compiled) {
 		GLint log_length = 0;
 		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &log_length);
 		GLchar *info_log = new GLchar[log_length];
@@ -79,8 +77,7 @@ GLuint *buffer;
 
 GLint attribArray;
 
-void Render()
-{
+void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(triangleShaderProgram);
@@ -108,8 +105,7 @@ void Render()
 	glutSwapBuffers();
 }
 
-GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2type)
-{
+GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2type) {
 	GLint vertexShader = readCompileShader(sh1name, sh1type);
 	GLint fragmentShader = readCompileShader(sh2name, sh2type);
 	GLuint shaderProgram = glCreateProgram();
@@ -118,8 +114,7 @@ GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2typ
 	GLint isLinkSuccesful;
 	glLinkProgram(shaderProgram);
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinkSuccesful);
-	if (!isLinkSuccesful)
-	{
+	if (!isLinkSuccesful) {
 		GLint log_length = 0;
 		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &log_length);
 		GLchar *info_log = new GLchar[log_length];
@@ -133,8 +128,7 @@ GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2typ
 	return shaderProgram;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
