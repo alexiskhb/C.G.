@@ -5,6 +5,7 @@
 #include <string>
 #include "vec4.hpp"
 #include "mat4.hpp"
+#include "mat.hpp"
 
 #define CAPTION ("Shch")
 
@@ -129,6 +130,12 @@ GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2typ
 }
 
 int main(int argc, char** argv) {
+	Vec4 v = Vec4(1.0, 2.0, 3.0);
+	Vec4 m = Vec4(v);
+	Vec4 n = m/0;
+	n.print(cout);
+
+	return 0;
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

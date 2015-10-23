@@ -16,6 +16,6 @@ Mat4::Mat4() : Mat(4, 4) {
 }
 
 Mat4::~Mat4() {
-	delete [] this->data;
+	//delete [] this->data;
 }
 
