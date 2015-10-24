@@ -27,7 +27,7 @@ Vec4 Vec4::operator*(Vec4 v) {
 
 Vec4 Vec4::normalized() {
 	Vec4 result = Vec4();
-	float normDivider = sqrt(degreedElSum(2));
+	floatv normDivider = sqrt(degreedElSum(2));
 	if (!isValid() || normDivider < fabs(epsilon)) {
 		result.valid = isValid() ? VTDIVBYZERO : VTERR;
 		return result;
@@ -38,7 +38,7 @@ Vec4 Vec4::normalized() {
 }
 
 void Vec4::normalize() {
-	float normDivider = sqrt(degreedElSum(2));
+	floatv normDivider = sqrt(degreedElSum(2));
 	if (!isValid() || normDivider < fabs(epsilon)) {
 		this->valid = isValid() ? VTDIVBYZERO : VTERR;
 		return;
@@ -47,15 +47,27 @@ void Vec4::normalize() {
 		(*this)[i] = (*this)[i] / normDivider;
 }
 
-Vec4 Vec4::operator+(float value) {
+Vec4 Vec4::operator+(floatv value) {
 	Vec4 result = Vec4();
-	operatorAdd(&result, value);
+	operatorAdd(result, value);
 	return result;
 }
 
-Vec4 Vec4::operator*(float value) {
+Vec4 Vec4::operator*(floatv value) {
 	Vec4 result = Vec4();
-	operatorMult(&result, value);
+	operatorMult(result, value);
+	return result;
+}
+
+Vec4 Vec4::operator+(Vec4 v) {
+	Vec4 result = Vec4();
+	operatorAdd(result, v, 1);
+	return result;
+}
+
+Vec4 Vec4::operator-(Vec4 v) {
+	Vec4 result = Vec4();
+	operatorAdd(result, v, -1);
 	return result;
 }
 
