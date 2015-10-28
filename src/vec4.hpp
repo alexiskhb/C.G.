@@ -2,9 +2,8 @@
 #define VEC4_HPP_
 
 #include "mat.hpp"
+#include "mat4.hpp"
 #include <utility>
-
-using namespace std;
 
 class Vec4 : public Mat {
 //------
@@ -30,13 +29,17 @@ public:
 	Vec4 operator/(floatv value) {return fabs(value) > epsilon ? operator*(1.0/value) : Vec4(VTDIVBYZERO);};
 	Vec4 operator+(Vec4 v);
 	Vec4 operator-(Vec4 v);
-	Vec4 operator*(Vec4 v);
+	Mat4 operator*(Vec4 v);
 	inline floatv& operator[](int index) {return this->data[index];};
 //------
+	static Vec4   cross (Vec4 a, Vec4 b);
+	static Vec4   bycomp(Vec4 a, Vec4 b);
+	static floatv dot   (Vec4 a, Vec4 b);
 	inline floatv length() {return sqrt(degreedElSum(2));};
-	void normalize();
-	void transpose() {swap(height, width);};
-	Vec4 normalized();
+	void   normalize();
+	Vec4   normalized();
+	Vec4   cross(Vec4 v) {return cross(*this, v);};
+	floatv dot  (Vec4 v) {return dot(*this, v);};;
 };
 
 #endif

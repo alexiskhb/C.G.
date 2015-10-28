@@ -2,17 +2,18 @@
 
 using namespace std;
 
-Mat::Mat(int height, int width) {
-	this->height = height;
-	this->width  = width;
-	this->data   = new floatv[width*height];
-	this->valid  = VTOK;
+Mat::Mat(int ht, int wt) {
+	height = ht;
+	width  = wt;
+	data   = new floatv[wt*ht];
+	datasize = wt*ht;
+	valid  = VTOK;
 }
 
-Mat::Mat(int height, int width, floatv(*func)(int, int)) : Mat(height, width) {
-	for(int i = 0; i < height; i++)
-		for(int j = 0; j < width; j++)
-			(*this)(i, j) = func(i, j);
+Mat::Mat(int ht, int wt, floatv(*func)(int, int, int, int)) : Mat(ht, wt) {
+	for(int i = 0; i < ht; i++)
+		for(int j = 0; j < wt; j++)
+			(*this)(i, j) = func(i, j, ht, wt);
 }
 
 Mat::~Mat() {
@@ -27,13 +28,21 @@ float Mat::degreedElSum(int degree) {
 }
 
 void Mat::transpose() {
-	floatv *newdata = new float[height*width];
-	for(int i = 0; i < height; i++)
-		for(int j = 0; j < width; j++)
-			newdata[j*height + i] = this->data[i*width + j];
+	if(height == 1 || width == 1) {
+	} else
+	if(height != width) {
+		floatv *newdata = new float[height*width];
+		for(int i = 0; i < height; i++)
+			for(int j = 0; j < width; j++)
+				newdata[j*height + i] = this->data[i*width + j];
+		delete [] this->data;
+		this->data = newdata;
+	} else {
+		for(int i = 0; i < height; i++)
+			for(int j = i; j < width; j++)
+				swap((*this)(i, j), (*this)(j, i));
+	}
 	swap(height, width);
-	delete [] this->data;
-	this->data = newdata;
 }
 
 void Mat::operatorAdd(Mat &result, floatv value) {
@@ -63,13 +72,19 @@ void Mat::operatorMultMatr(Mat &result, Mat m) {
 		result.valid = VTBADMULTIPLY;
 		return;
 	}
-	for(int i = 0; i < result.height; i++)
-		for(int j = 0; j < result.width; j++) {
+	if (result.capacity() < this->height*m.width) {
+		result.valid = VTBADCAPACITY;
+		return;
+	}
+	for(int i = 0; i < this->height; i++)
+		for(int j = 0; j < m.width; j++) {
 			result(i, j) = 0.0;
 			for(int k = 0; k < this->width; k++) {
 				result(i, j) += (*this)(i, k) * m(k, j);
 			}
 		}
+	result.height = this->height;
+	result.width  = m.width;
 }
 
 void Mat::operatorAdd(Mat &result, Mat m, int sign) {
@@ -92,3 +107,30 @@ void Mat::print(ostream &out) {
 		for(int j = 0; j < this->width; j++)
 			out << (*this)(i, j) << (j == this->width - 1 ? '\n' : ' ');
 }
+
+floatv Mat::det3(int r1, int r2, int r3, int c1, int c2, int c3) {
+	Mat a = *this;
+	if (max(r1, max(r2, r3)) >= height || max(r1, max(r2, r3)) >= width)
+	{
+		this->valid = VTOUTOFBORDERS;
+		return 0.0;
+	}
+	return
+		a(r1, c1)*a(r2, c2)*a(r3, c3) + a(r1, c2)*a(r2, c3)*a(r3, c1) + a(r1, c3)*a(r2, c1)*a(r3, c2) -
+		a(r1, c3)*a(r2, c2)*a(r3, c1) - a(r2, c3)*a(r3, c2)*a(r1, c1) - a(r3, c3)*a(r1, c2)*a(r2, c1);
+}
+
+floatv Mat::det2(int r1, int r2, int c1, int c2) {
+	Mat a = *this;
+	if (max(r1, r2) >= height || max(r1, r2) >= width)
+	{
+		this->valid = VTOUTOFBORDERS;
+		return 0.0;
+	}
+	return a(r1, c1)*a(r2, c2) - a(r2, c1)*a(r1, c2);
+}
+
+
+
+
+

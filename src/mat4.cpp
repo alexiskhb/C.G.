@@ -1,13 +1,14 @@
 //mat4 createmat()
 //mat4 createidentity()
 //mat4 transpose()
-//int determinant()
-//int inverse() (LU, SVD)-methods
 //add (mat1, mat2)
 //sub(mat1, mat2)
 //mult(mat, num)
 //mult(mat, mat)
 //mult(mat, vec)
+
+//int determinant()
+//int inverse() (LU, SVD)-methods
 
 #include "mat4.hpp"
 

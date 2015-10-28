@@ -129,13 +129,24 @@ GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2typ
 	return shaderProgram;
 }
 
-int main(int argc, char** argv) {
-	Vec4 v = Vec4(1.0, 2.0, 3.0);
-	Vec4 m = Vec4(v);
-	Vec4 n = m/0;
-	n.print(cout);
+float mtr(int i, int j, int h, int w) {
+	return fabs(i + j*3 - h*w/2.0);
+}
 
-	return 0;
+int main(int argc, char** argv) {
+	Mat4 E = Mat4::createIdent();
+	Mat4 M = Mat4(mtr);
+	Vec4 v = Vec4(1, 2, 3);
+	Vec4 u = Vec4(5, 6, 7);
+	u.transpose();
+	u.print(cout);
+	v.print(cout);
+	cout << endl;
+	Mat4 m = u*v;
+	m.print(cout);
+	cout << endl;
+	//return 0;
+
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

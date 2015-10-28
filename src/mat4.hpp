@@ -8,11 +8,11 @@ class Mat4 : public Mat {
 //------
 public:
 	Mat4() : Mat(4, 4) {};
-	virtual ~Mat4();
 	Mat4(const Mat4& orig);
 	Mat4(ValidityT validity) : Mat(validity) {};
-	Mat4(floatv(*func)(int, int)) : Mat(4, 4, func) {};
+	Mat4(floatv(*func)(int row, int col, int height, int width)) : Mat(4, 4, func) {};
 	static Mat4 createIdent();
+	virtual ~Mat4();
 //------
 	Mat4 operator+(floatv value);
 	Mat4 operator-(floatv value) {return operator+(-value);};
@@ -24,6 +24,7 @@ public:
 	Vec4 operator*(Vec4 v);
 //------
 	Mat4 transposed();
+	floatv det() {return det3(0, 1, 2, 0, 1, 2);};
 };
 
 #endif
