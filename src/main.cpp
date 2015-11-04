@@ -3,9 +3,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "vec4.hpp"
 #include "mat4.hpp"
 #include "mat.hpp"
+#include "test.hpp"
+#include "vec4.hpp"
 
 #define CAPTION ("Shch")
 
@@ -130,22 +131,30 @@ GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2typ
 }
 
 float mtr(int i, int j, int h, int w) {
-	return fabs(i + j*3 - h*w/2.0);
+	return fabs(i + j*2);
 }
 
 int main(int argc, char** argv) {
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+
+
 	Mat4 E = Mat4::createIdent();
+	cout << "E\n" << E << endl;
 	Mat4 M = Mat4(mtr);
+	cout << "M\n" << M << endl << (M + 2) << endl << (M * 2) << endl << (M - 2) << endl << (M + E) << endl << (M * (E*2)) << endl;
+	Mat4 Minv = M.inversed3();
+
+
 	Vec4 v = Vec4(1, 2, 3);
 	Vec4 u = Vec4(5, 6, 7);
+	Vec4 v1 = Vec4(1, 3, 6), v2 = Vec4(22, 5, 1), v3 = Vec4(64, 45, 0, 9), v4 = Vec4(1, 32, 2, 1);
+
 	u.transpose();
-	u.print(cout);
-	v.print(cout);
-	cout << endl;
+	cout << u << endl << v << endl;
 	Mat4 m = u*v;
-	m.print(cout);
-	cout << endl;
-	//return 0;
+	cout << m << endl;
+	return 0;
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);

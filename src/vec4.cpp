@@ -20,12 +20,12 @@ Vec4::Vec4(const Vec4& orig) : Mat(orig.height, orig.width) {
 
 Vec4 Vec4::bycomp(Vec4 a, Vec4 b) {
 	Vec4 result = Vec4();
-	for(int i = 0; i < a.width*b.height; i++)
+	for(int i = 0; i < a.width*a.height; i++)
 		result[i] = a[i] * b[i];
 	return result;
 }
 
-Mat4 Vec4::operator*(Vec4 v) {
+Mat4 Vec4::operator*(const Vec4 &v) {
 	Mat4 result = Mat4();
 	operatorMultMatr(result, v);
 	return result;
@@ -65,19 +65,19 @@ Vec4 Vec4::operator*(floatv value) {
 	return result;
 }
 
-Vec4 Vec4::operator+(Vec4 v) {
+Vec4 Vec4::operator+(const Vec4 &v) {
 	Vec4 result = Vec4();
 	operatorAdd(result, v, 1);
 	return result;
 }
 
-Vec4 Vec4::operator-(Vec4 v) {
+Vec4 Vec4::operator-(const Vec4 &v) {
 	Vec4 result = Vec4();
 	operatorAdd(result, v, -1);
 	return result;
 }
 
-Vec4 Vec4::cross(Vec4 a, Vec4 b) {
+Vec4 Vec4::cross3(Vec4 a, Vec4 b) {
 	Vec4 result = Vec4(
 			a.Y()*b.Z() - a.Z()*b.Y(),
 			a.Z()*b.X() - a.X()*b.Z(),
@@ -87,8 +87,16 @@ Vec4 Vec4::cross(Vec4 a, Vec4 b) {
 	return result;
 }
 
-floatv Vec4::dot(Vec4 a, Vec4 b) {
+inline floatv Vec4::length3() {
+	Vec4 a = *this;
+	if (fabs(a.W()) - 1 < epsilon)
+		a /= a.W();
+	return sqrt(a.degreedElSum(2) - 1);
+}
+
+floatv Vec4::dot3(Vec4 a, Vec4 b) {
 	floatv result = 0.0;
+	if ()
 	result = a.X()*b.X() + a.Y()*b.Y() + a.Z()*b.Z();
 	return result;
 }

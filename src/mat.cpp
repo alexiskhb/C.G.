@@ -10,6 +10,12 @@ Mat::Mat(int ht, int wt) {
 	valid  = VTOK;
 }
 
+bool Mat::operator==(const Mat &a) {
+	bool result = a.height == height && a.width == width;
+
+	return result;
+}
+
 Mat::Mat(int ht, int wt, floatv(*func)(int, int, int, int)) : Mat(ht, wt) {
 	for(int i = 0; i < ht; i++)
 		for(int j = 0; j < wt; j++)
@@ -18,6 +24,24 @@ Mat::Mat(int ht, int wt, floatv(*func)(int, int, int, int)) : Mat(ht, wt) {
 
 Mat::~Mat() {
 	//delete [] this->data;
+}
+
+Mat Mat::operator+(floatv value) {
+	Mat4 result = Mat(height, width);
+	operatorAdd(result, value);
+	return result;
+}
+
+Mat Mat::operator*(floatv value) {
+	Mat result = Mat(height, width);
+	operatorMult(result, value);
+	return result;
+}
+
+Mat Mat::operator*(const Mat &m) {
+	Mat result = Mat(height, width);
+	operatorMultMatr(result, m);
+	return result;
 }
 
 float Mat::degreedElSum(int degree) {

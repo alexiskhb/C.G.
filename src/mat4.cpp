@@ -20,6 +20,15 @@ Mat4::Mat4(const Mat4 &orig) : Mat(orig.height, orig.width) {
 	this->valid = orig.valid;
 }
 
+Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3, const Vec4 &v4) : Mat(4, 4) {
+	Vec4 a[4] = {v1, v2, v3, v4};
+	for(int i = 0; i < 4; i++)
+		for(int j = 0; j < 4; j++)
+			this->data[i*4 + j] = a[i][j];
+}
+
+Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) : Mat4(v1, v2, v3, Vec4(0, 0, 0)) {};
+
 Mat4 Mat4::createIdent() {
 	Mat4 result = Mat4();
 	makeIdent(result);
@@ -38,25 +47,33 @@ Mat4 Mat4::operator*(floatv value) {
 	return result;
 }
 
-Mat4 Mat4::operator*(Mat4 m) {
+Mat4 Mat4::operator*(const Mat4 &m) {
 	Mat4 result = Mat4();
 	operatorMultMatr(result, m);
 	return result;
 }
 
-Mat4 Mat4::operator+(Mat4 m) {
+Mat4 Mat4::multMatr3(Mat4 m) {
+	Mat4 result;
+	this->height = this->width = m.height = m.width = 3;
+	operatorMultMatr(result, m);
+	this->height = this->width = m.height = m.width = 4;
+	return result;
+}
+
+Mat4 Mat4::operator+(const Mat4 &m) {
 	Mat4 result = Mat4();
 	operatorAdd(result, m, 1);
 	return result;
 }
 
-Mat4 Mat4::operator-(Mat4 m) {
+Mat4 Mat4::operator-(const Mat4 &m) {
 	Mat4 result = Mat4();
 	operatorAdd(result, m, -1);
 	return result;
 }
 
-Vec4 Mat4::operator*(Vec4 v) {
+Vec4 Mat4::operator*(const Vec4 &v) {
 	Vec4 result = Vec4();
 	operatorMultMatr(result, v);
 	return result;
@@ -67,6 +84,26 @@ Mat4 Mat4::transposed() {
 	result.transpose();
 	return result;
 }
+
+Mat4 Mat4::inversed3() {
+	Mat4 res;
+	floatv div = det3();
+	if (fabs(div) < epsilon) {
+		res.valid = VTSINGULAR;
+		return res;
+	}
+	res(0, 0) =  det2(1, 2, 1, 2)/div;
+	res(0, 1) = -det2(0, 2, 1, 2)/div;
+	res(0, 2) =  det2(0, 1, 1, 2)/div;
+	res(1, 0) = -det2(1, 2, 0, 2)/div;
+	res(1, 1) =  det2(0, 2, 0, 2)/div;
+	res(1, 2) = -det2(0, 1, 0, 2)/div;
+	res(2, 0) =  det2(1, 2, 0, 1)/div;
+	res(2, 1) = -det2(0, 2, 0, 1)/div;
+	res(2, 2) =  det2(0, 1, 0, 1)/div;
+	return res;
+}
+
 
 Mat4::~Mat4() {
 	//delete [] this->data;
