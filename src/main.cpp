@@ -62,91 +62,112 @@ using namespace std;
 const int WT = 640;
 const int HT = 480;
 
-char triangleVertexShaderName[] = "../shaders/VerticesShader.hlsl";
-char triangleFragmentShaderName[] = "../shaders/FragmentShader.hlsl";
-char squareFragmentShaderName[] = "../shaders/SquareFragmentShader.hlsl";
+char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
+char linesShaderName[] = "../shaders/LinesVertices.hlsl";
 
-typedef enum {
-	FTSQUARE, FTTRGL, FTCNT
-} FIGURE_T;
-
-float triangleVertices[] =
-{
-	0.3f, 1.0f, 0.0f,
-	-0.8f, -0.45f, 0.0f, //left
-	0.6f, -1.0f, 0.0f
-};
-float squareVertices[] =
-{
-	-0.9f, 0.9f, 0.0f, //lu
-	-0.1f, 0.9f, 0.0f, //ru
-	-0.1f, 0.1f, 0.0f, //rd
-	-0.9f, 0.1f, 0.0f  //ld
-};
-
-GLint readCompileShader(char *fileName, GLenum shaderType) {
-	ifstream fileToRead(fileName);
-	if (!fileToRead) {
-		cout << "No such file: " << fileName << endl;
-		exit(0);
-	}
-	fileToRead.seekg(0, fileToRead.end);
-	const GLint shaderLength[1] = {fileToRead.tellg()};
-	fileToRead.seekg(0, fileToRead.beg);
-	GLchar *textBuffer = new GLchar[shaderLength[0]];
-	fileToRead.read(textBuffer, shaderLength[0]);
-	const GLchar *shaderText[1] = {textBuffer};
-	GLint shaderId = glCreateShader(shaderType);
-	glShaderSource(shaderId, 1, shaderText, shaderLength);
-	delete [] textBuffer;
-	glCompileShader(shaderId);
-	GLint is_compiled;
-	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &is_compiled);
-	if (!is_compiled) {
-		GLint log_length = 0;
-		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &log_length);
-		GLchar *info_log = new GLchar[log_length];
-		GLint returned_length = 0;
-		glGetShaderInfoLog(shaderId, log_length, &returned_length, info_log);
-		glDeleteShader(shaderId);
-		cout << "Shader compilation error in " << fileName;
-		cout << '\n' << info_log;
-		delete [] info_log;
-		exit(0);
-	}
-	return shaderId;
-}
-
-GLuint triangleShaderProgram;
-GLuint squareShaderProgram;
+GLuint linesShaderProgram;
 GLuint *vertexArrays;
-GLuint squareVertexArray;
-
 GLuint *buffer;
-
 GLint attribArray;
 
-void RenderTriangleAndSquare() {
+namespace prog {
+
+	GLint readCompileShader(char *fileName, GLenum shaderType) {
+		ifstream fileToRead(fileName);
+		if (!fileToRead) {
+			cout << "No such file: " << fileName << endl;
+			exit(0);
+		}
+		fileToRead.seekg(0, fileToRead.end);
+		const GLint shaderLength[1] = {fileToRead.tellg()};
+		fileToRead.seekg(0, fileToRead.beg);
+		GLchar *textBuffer = new GLchar[shaderLength[0]];
+		fileToRead.read(textBuffer, shaderLength[0]);
+		const GLchar *shaderText[1] = {textBuffer};
+		GLint shaderId = glCreateShader(shaderType);
+		glShaderSource(shaderId, 1, shaderText, shaderLength);
+		delete [] textBuffer;
+		glCompileShader(shaderId);
+		GLint is_compiled;
+		glGetShaderiv(shaderId, GL_COMPILE_STATUS, &is_compiled);
+		if (!is_compiled) {
+			GLint log_length = 0;
+			glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &log_length);
+			GLchar *info_log = new GLchar[log_length];
+			GLint returned_length = 0;
+			glGetShaderInfoLog(shaderId, log_length, &returned_length, info_log);
+			glDeleteShader(shaderId);
+			cout << "Shader compilation error in " << fileName;
+			cout << '\n' << info_log;
+			delete [] info_log;
+			exit(0);
+		}
+		return shaderId;
+	}
+
+	GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2type) {
+		GLint vertexShader = readCompileShader(sh1name, sh1type);
+		GLint fragmentShader = readCompileShader(sh2name, sh2type);
+		GLuint shaderProgram = glCreateProgram();
+		glAttachShader(shaderProgram, vertexShader);
+		glAttachShader(shaderProgram, fragmentShader);
+		GLint isLinkSuccesful;
+		glLinkProgram(shaderProgram);
+		glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinkSuccesful);
+		if (!isLinkSuccesful) {
+			GLint log_length = 0;
+			glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &log_length);
+			GLchar *info_log = new GLchar[log_length];
+			GLint returned_length = 0;
+			glGetProgramInfoLog(shaderProgram, log_length, &returned_length, info_log);
+			cout << "Program linking error\n" << info_log;
+			glDeleteProgram(shaderProgram);
+			delete [] info_log;
+			exit(0);
+		}
+		return shaderProgram;
+	}
+
+}
+
+const int h_lines = 20, v_lines = 20;
+float lines[h_lines*2*3 + v_lines*2*3];
+
+namespace cl {
+	void SetLine(int st, floatv x1, floatv y1, floatv x2, floatv y2) {
+		int e = st + 3;
+		lines[st    ] = x1;
+		lines[st + 1] = y1;
+		lines[st + 2] = 0.;
+		lines[e     ] = x2;
+		lines[e  + 1] = y2;
+		lines[e  + 2] = 0.;
+	}
+
+	void CreateLines() {
+		for(int i = 0; i < h_lines; i += 2) {
+			SetLine(    i*6, -1.,  1./h_lines*i, 1.,  1./h_lines*i);
+			SetLine((i+1)*6, -1., -1./h_lines*i, 1., -1./h_lines*i);
+		}
+		for(int i = h_lines; i < h_lines + v_lines; i += 2) {
+			SetLine(    i*6,  1./v_lines*(i - h_lines), 1.,  1./v_lines*(i - h_lines), -1.);
+			SetLine((i+1)*6, -1./v_lines*(i - h_lines), 1., -1./v_lines*(i - h_lines), -1.);
+		}
+	}
+}
+
+void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(triangleShaderProgram);
+	glUseProgram(linesShaderProgram);
 	//attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
-	glBindVertexArray(vertexArrays[FTTRGL]);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer[FTTRGL]);
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), triangleVertices, GL_STATIC_DRAW);
+	glBindVertexArray(vertexArrays[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
+	glBufferData(GL_ARRAY_BUFFER, (h_lines*2*3 + v_lines*2*3) * sizeof(float), lines, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(attribArray);
 	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glUseProgram(squareShaderProgram);
-	//attribArray = glGetAttribLocation(squareShaderProgram, "vertexPosition");
-	glBindVertexArray(vertexArrays[FTSQUARE]);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer[FTSQUARE]);
-	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), squareVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(attribArray);
-	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	for(int i = 0; i < h_lines + v_lines; i++)
+		glDrawArrays(GL_LINES, i*2, 3);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glUseProgram(0);
@@ -154,55 +175,16 @@ void RenderTriangleAndSquare() {
 	glutSwapBuffers();
 }
 
-GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2type) {
-	GLint vertexShader = readCompileShader(sh1name, sh1type);
-	GLint fragmentShader = readCompileShader(sh2name, sh2type);
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	GLint isLinkSuccesful;
-	glLinkProgram(shaderProgram);
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinkSuccesful);
-	if (!isLinkSuccesful) {
-		GLint log_length = 0;
-		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &log_length);
-		GLchar *info_log = new GLchar[log_length];
-		GLint returned_length = 0;
-		glGetProgramInfoLog(shaderProgram, log_length, &returned_length, info_log);
-		cout << "Program linking error\n" << info_log;
-		glDeleteProgram(shaderProgram);
-		delete [] info_log;
-		exit(0);
-	}
-	return shaderProgram;
-}
 
 float mtr(int i, int j, int h, int w) {
 	return fabs(i + j*2);
 }
 
 int main(int argc, char** argv) {
-	::testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-
-
-//	Mat4 E = Mat4::createIdent();
-//	cout << "E\n" << E << endl;
-//	Mat4 M = Mat4(mtr);
-//	cout << "M\n" << M << endl << (M + 2) << endl << (M * 2) << endl << (M - 2) << endl << (M + E) << endl << (M * (E*2)) << endl;
-//	Mat4 Minv = M.inversed3();
-
-	Vec4 v = Vec4(2, 5.1, 6.6);
-
-//	Vec4 v = Vec4(1, 2, 3);
-//	Vec4 u = Vec4(5, 6, 7);
-//	Vec4 v1 = Vec4(1, 3, 6), v2 = Vec4(22, 5, 1), v3 = Vec4(64, 45, 0, 9), v4 = Vec4(1, 32, 2, 1);
-
-//	u.transpose();
-//	cout << u << endl << v << endl;
-//	Mat4 m = u*v;
-//	cout << m << endl;
-	return 0;
+	cl::CreateLines();
+	//::testing::InitGoogleTest(&argc, argv);
+	//return RUN_ALL_TESTS();
+//	Vec4 v = Vec4(2, 5.1, 6.6);
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
@@ -210,25 +192,21 @@ int main(int argc, char** argv) {
 	glutInitContextVersion(3, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(CAPTION);
-	glutDisplayFunc(RenderTriangleAndSquare);
+	glutDisplayFunc(Render);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
 		return 1;
 
-	triangleShaderProgram = CreateProgram(
-		triangleVertexShaderName, GL_VERTEX_SHADER,
-		triangleFragmentShaderName, GL_FRAGMENT_SHADER);
+	linesShaderProgram = prog::CreateProgram(
+		linesShaderName, GL_VERTEX_SHADER,
+		fragmentShaderName, GL_FRAGMENT_SHADER);
 
-	squareShaderProgram = CreateProgram(
-		triangleVertexShaderName, GL_VERTEX_SHADER,
-		squareFragmentShaderName, GL_FRAGMENT_SHADER);
-
-	vertexArrays = new GLuint[FTCNT];
-	glGenVertexArrays(FTCNT, vertexArrays);
-	buffer = new GLuint[FTCNT];
-	glGenBuffers(FTCNT, buffer);
-	attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
+	vertexArrays = new GLuint[1];
+	glGenVertexArrays(1, vertexArrays);
+	buffer = new GLuint[1];
+	glGenBuffers(1, buffer);
+	attribArray = glGetAttribLocation(linesShaderProgram, "vertexPosition");
 	glEnableVertexAttribArray(attribArray);
 
 	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
