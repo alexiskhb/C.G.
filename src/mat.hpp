@@ -13,7 +13,7 @@ typedef float floatv;
 const floatv epsilon = 1e-10;
 
 typedef enum {
-	VTOK, VTBADMULTIPLY, VTDIVBYZERO, VTERR, VTBADCAPACITY, VTOUTOFBORDERS, VTSINGULAR
+	VTOK, VTBADMULTIPLY, VTDIVBYZERO, VTERR, VTBADCAPACITY, VTOUTOFBORDERS, VTSINGULAR, VTDIFFSIZE
 } ValidityT;
 
 class Mat {
@@ -39,10 +39,10 @@ public:
 	floatv  det2(int r1, int r2, int c1, int c2);
 	friend  std::ostream& operator<<(std::ostream &out, Mat m) {m.print(out); return out;};
 ////
-	Mat Mat::operator+(floatv value);
+	Mat operator+(floatv value);
 
-	Mat Mat::operator*(const Mat &m);
-	Mat Mat::operator*(floatv value);
+	Mat operator*(const Mat &m);
+	Mat operator*(floatv value);
 ////
 protected:
 	floatv *data;

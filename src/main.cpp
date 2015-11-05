@@ -8,6 +8,53 @@
 #include "test.hpp"
 #include "vec4.hpp"
 
+/*
+mat translate(mat, vec) m = tmat*mat, tmat =
+ 1 0 0 v1
+ 0 1 0 v2
+ 0 0 1 v3
+ 0 0 0  1
+
+mat rotate(mat, vec axis, angle)
+mat scale(mat, vec)
+then mult rmat*vetrex
+
+mat otrho(left, right, top, bottom, near, far) //cuts
+mat frustum(left, right, top, bottom, near, far) //cut pyramide
+mat perspective(field_of_view_y(angle), aspect_relative(=w/h), near, far)
+r2mat
+
+shader <- rmat*r2mat
+
+struct Camera
+float fovy, near, far
+int w, h
+vec position, targetview, side
+
+  /
+  | sidex, sidey, sidez, 0
+  | ypx, upy, upz, 0
+  | targetx, ty, tz, 0
+  | 0 0 0 1
+  \
+ *
+ x
+ y
+ z
+ 1
+
+cameraMove(camera, vec)
+cameraRotate(camera, vec, angle)
+cameraScale(camera, vec)
+cameraZoom(camera, float)
+lookAt(vec pos, target, side)
+
+ uniform mat4 mvp
+ get uniform allocation
+
+ glutkeyboardfunc
+*/
+
 #define CAPTION ("Shch")
 
 using namespace std;
@@ -79,7 +126,7 @@ GLuint *buffer;
 
 GLint attribArray;
 
-void Render() {
+void RenderTriangleAndSquare() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glUseProgram(triangleShaderProgram);
@@ -139,21 +186,22 @@ int main(int argc, char** argv) {
 	return RUN_ALL_TESTS();
 
 
-	Mat4 E = Mat4::createIdent();
-	cout << "E\n" << E << endl;
-	Mat4 M = Mat4(mtr);
-	cout << "M\n" << M << endl << (M + 2) << endl << (M * 2) << endl << (M - 2) << endl << (M + E) << endl << (M * (E*2)) << endl;
-	Mat4 Minv = M.inversed3();
+//	Mat4 E = Mat4::createIdent();
+//	cout << "E\n" << E << endl;
+//	Mat4 M = Mat4(mtr);
+//	cout << "M\n" << M << endl << (M + 2) << endl << (M * 2) << endl << (M - 2) << endl << (M + E) << endl << (M * (E*2)) << endl;
+//	Mat4 Minv = M.inversed3();
 
+	Vec4 v = Vec4(2, 5.1, 6.6);
 
-	Vec4 v = Vec4(1, 2, 3);
-	Vec4 u = Vec4(5, 6, 7);
-	Vec4 v1 = Vec4(1, 3, 6), v2 = Vec4(22, 5, 1), v3 = Vec4(64, 45, 0, 9), v4 = Vec4(1, 32, 2, 1);
+//	Vec4 v = Vec4(1, 2, 3);
+//	Vec4 u = Vec4(5, 6, 7);
+//	Vec4 v1 = Vec4(1, 3, 6), v2 = Vec4(22, 5, 1), v3 = Vec4(64, 45, 0, 9), v4 = Vec4(1, 32, 2, 1);
 
-	u.transpose();
-	cout << u << endl << v << endl;
-	Mat4 m = u*v;
-	cout << m << endl;
+//	u.transpose();
+//	cout << u << endl << v << endl;
+//	Mat4 m = u*v;
+//	cout << m << endl;
 	return 0;
 
 	glutInit(&argc, argv);
@@ -162,7 +210,7 @@ int main(int argc, char** argv) {
 	glutInitContextVersion(3, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(CAPTION);
-	glutDisplayFunc(Render);
+	glutDisplayFunc(RenderTriangleAndSquare);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)

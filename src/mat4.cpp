@@ -27,7 +27,7 @@ Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3, const Vec4 &v4) : Mat
 			this->data[i*4 + j] = a[i][j];
 }
 
-Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) : Mat4(v1, v2, v3, Vec4(0, 0, 0)) {};
+Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) : Mat4(v1, v2, v3, Vec4(3)) {};
 
 Mat4 Mat4::createIdent() {
 	Mat4 result = Mat4();
@@ -74,7 +74,7 @@ Mat4 Mat4::operator-(const Mat4 &m) {
 }
 
 Vec4 Mat4::operator*(const Vec4 &v) {
-	Vec4 result = Vec4();
+	Vec4 result = Vec4(4, 5.0, 6.0, 7.0, 8.0);
 	operatorMultMatr(result, v);
 	return result;
 }
@@ -104,6 +104,49 @@ Mat4 Mat4::inversed3() {
 	return res;
 }
 
+Mat4 Mat4::translate(Vec4 v) {
+	return (*this)*Mat4(
+			Vec4(4, 1., 0., 0., v[0]),
+			Vec4(4, 0., 1., 0., v[1]),
+			Vec4(4, 0., 0., 1., v[2]),
+			Vec4(4, 0., 0., 0., 1.));
+}
+
+Mat4 Mat4::scale(Vec4 v) {
+	return (*this)*Mat4(
+			Vec4(4, v[0], 0., 0., 0.),
+			Vec4(4, 0., v[1], 0., 0.),
+			Vec4(4, 0., 0., v[2], 0.),
+			Vec4(4, 0., 0., 0.,   1.));
+}
+
+Mat4 Mat4::rotate(Vec4 v, floatv angle) {
+	Mat4 general_rotation = Mat4::createIdent();
+	if (v[0]) {
+		general_rotation = general_rotation * Mat4(
+				Vec4(4, 1., 0., 0., 0.),
+				Vec4(4, 0., cos(angle), -sin(angle), 0.),
+				Vec4(4, 0., sin(angle),  cos(angle), 0.),
+				Vec4(4, 0., 0., 0., 1.));
+	}
+	if (v[1]) {
+		general_rotation = general_rotation * Mat4(
+				Vec4(4,  cos(angle), 0., sin(angle), 0.),
+				Vec4(4, 0., 1., 0., 0.),
+				Vec4(4, -sin(angle), 0., cos(angle), 0.),
+				Vec4(4, 0., 0., 0., 1.));
+
+	}
+	if (v[2]) {
+		general_rotation = general_rotation * Mat4(
+				Vec4(4, cos(angle), -sin(angle), 0., 0.),
+				Vec4(4, sin(angle),  cos(angle), 0., 0.),
+				Vec4(4, 0., 0., 1., 0.),
+				Vec4(4, 0., 0., 0., 1.));
+
+	}
+	return general_rotation*(*this);
+}
 
 Mat4::~Mat4() {
 	//delete [] this->data;

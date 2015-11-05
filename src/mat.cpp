@@ -27,7 +27,7 @@ Mat::~Mat() {
 }
 
 Mat Mat::operator+(floatv value) {
-	Mat4 result = Mat(height, width);
+	Mat result = Mat(height, width);
 	operatorAdd(result, value);
 	return result;
 }
