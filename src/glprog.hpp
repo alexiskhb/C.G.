@@ -19,7 +19,7 @@ public:
 class Program {
 public:
 	GLuint handler;
-	GLint attribArray;
+	GLint  attribArray;
 	GLuint mvp_handler;
 	Program();
 	Program(const Shader &shader1, const Shader &shader2);

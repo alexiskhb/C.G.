@@ -8,6 +8,7 @@
 #include "test.hpp"
 #include "vec4.hpp"
 #include "glprog.hpp"
+#include "Cameram.hpp"
 
 /*
 mat translate(mat, vec) m = tmat*mat, tmat =
@@ -61,7 +62,9 @@ lookAt(vec pos, target, side)
 using namespace std;
 
 const int WT = 640;
-const int HT = 480;
+const int HT = 640;
+
+const float step = 0.07;
 
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
@@ -70,7 +73,17 @@ GLuint *vertexArrays;
 GLuint *buffer;
 Program lsProgram;
 
+Mat4 MVP;
+Mat4 model;
+Mat4 view;
 Mat4 projection;
+
+Mat4 scale;
+Mat4 rotatem;
+Mat4 perspective;
+Mat4 translate;
+
+Camera camera;
 
 const int h_lines = 20, v_lines = 20;
 float lines[h_lines*2*3 + v_lines*2*3];
@@ -116,8 +129,31 @@ void Render() {
 }
 
 void handleKey(unsigned char key, int x, int y) {
-	std::cout << key;
-	std::cout.flush();
+	(std::cout << key).flush();
+	if (key == 'w') {
+		camera.position += Vec4(4, 0., step);
+	}
+	if (key == 'a') {
+
+	}
+	if (key == 's') {
+		camera.position += Vec4(4, 0., -step);
+	}
+	if (key == 'd') {
+
+	}
+	if (key == 'z') {
+		camera.position += Vec4(4, 0., 0., step);
+	}
+	if (key == 'x') {
+		camera.position += Vec4(4, 0., 0., -step);
+	}
+	if (key == 'q') {
+
+	}
+	if (key == 'e') {
+
+	}
 }
 
 
@@ -126,10 +162,12 @@ float mtr(int i, int j, int h, int w) {
 }
 
 int main(int argc, char** argv) {
+
 	cl::CreateLines();
-	//::testing::InitGoogleTest(&argc, argv);
-	//return RUN_ALL_TESTS();
-//	Vec4 v = Vec4(2, 5.1, 6.6);
+	camera = Camera(
+			/*position*/Vec4(4, 0.7, 0., 1.),
+			/*look at*/Vec4(4, 0.7, 1., 1.),
+			/* head */Vec4(4, 0., 1.));
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
@@ -147,8 +185,18 @@ int main(int argc, char** argv) {
 	lsProgram = Program(
 		Shader(linesShaderName, GL_VERTEX_SHADER),
 		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
-	projection = Mat4(Vec4(4, 1., 0., 0., 0.), Vec4(4, 0., 1., 0., 1.), Vec4(4, 0., 0., 1., 1.), Vec4(4, 0., 0., 0., 1.));
-	cout << projection;
+
+	perspective = Mat4::ident().perspective(Vec4(4, 0., 1., 1.));
+	scale       = Mat4::ident().scale(Vec4(4, 1.5, 1., 1.5));
+	rotatem     = Mat4::ident().rotate(Vec4(4, 0., 1., 0.), -40);
+	translate   = Mat4::ident().translate(Vec4(4, -0., -0., 0.));
+
+	view       = Mat4::ident();
+	projection = Mat4::ident();
+	model      = Mat4::ident();
+
+	MVP = projection * view * model;
+
 	vertexArrays = new GLuint[1];
 	glGenVertexArrays(1, vertexArrays);
 	buffer = new GLuint[1];
@@ -157,7 +205,7 @@ int main(int argc, char** argv) {
 	lsProgram.GetAttribAllocation("vertexPosition");
 	lsProgram.EnableVertexAttribArray();
 	lsProgram.GetUniformLocation("trans");
-	lsProgram.UniformMatrix(projection);
+	lsProgram.UniformMatrix(MVP);
 
 
 	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
@@ -215,3 +263,8 @@ int main(int argc, char** argv) {
 //**glUseProgram(0)
 
 //VBO, VAO
+
+
+//::testing::InitGoogleTest(&argc, argv);
+	//return RUN_ALL_TESTS();
+//	Vec4 v = Vec4(2, 5.1, 6.6);

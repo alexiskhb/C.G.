@@ -29,7 +29,7 @@ Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3, const Vec4 &v4) : Mat
 
 Mat4::Mat4(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) : Mat4(v1, v2, v3, Vec4(3)) {};
 
-Mat4 Mat4::createIdent() {
+Mat4 Mat4::ident() {
 	Mat4 result = Mat4();
 	makeIdent(result);
 	return result;
@@ -85,6 +85,16 @@ Mat4 Mat4::transposed() {
 	return result;
 }
 
+floatv Mat4::det4() {
+	floatv result = 0.;
+	Mat4 a = (*this);
+	result += a(0, 0) * det3(1, 2, 3, 1, 2, 3);
+	result -= a(0, 1) * det3(1, 2, 3, 0, 2, 3);
+	result += a(0, 2) * det3(1, 2, 3, 0, 1, 3);
+	result -= a(0, 3) * det3(1, 2, 3, 0, 1, 2);
+	return result;
+}
+
 Mat4 Mat4::inversed3() {
 	Mat4 res;
 	floatv div = det3();
@@ -104,12 +114,46 @@ Mat4 Mat4::inversed3() {
 	return res;
 }
 
-Mat4 Mat4::translate(Vec4 v) {
+Mat4 Mat4::inversed() {
+	Mat4 res;
+	floatv div = det4();
+	if (fabs(div) < epsilon) {
+		res.valid = VTSINGULAR;
+		return res;
+	}
+	res(0, 0) =  det3(1, 2, 3, 1, 2, 3)/div;
+	res(0, 1) = -det3(0, 2, 3, 1, 2, 3)/div;
+	res(0, 2) =  det3(0, 1, 3, 1, 2, 3)/div;
+	res(0, 3) = -det3(0, 1, 2, 1, 2, 3)/div;
+	res(1, 0) = -det3(1, 2, 3, 0, 2, 3)/div;
+	res(1, 1) =  det3(0, 2, 3, 0, 2, 3)/div;
+	res(1, 2) = -det3(0, 1, 3, 0, 2, 3)/div;
+	res(1, 3) =  det3(0, 1, 2, 0, 2, 3)/div;
+	res(2, 0) =  det3(1, 2, 3, 0, 1, 3)/div;
+	res(2, 1) = -det3(0, 2, 3, 0, 1, 3)/div;
+	res(2, 2) =  det3(0, 1, 3, 0, 1, 3)/div;
+	res(2, 3) = -det3(0, 1, 2, 0, 1, 3)/div;
+	res(3, 0) = -det3(1, 2, 3, 0, 1, 2)/div;
+    res(3, 1) =  det3(0, 2, 3, 0, 1, 2)/div;
+	res(3, 2) = -det3(0, 1, 3, 0, 1, 2)/div;
+	res(3, 3) =  det3(0, 1, 2, 0, 1, 2)/div;
+	return res;
+}
+
+Mat4 Mat4::perspective(Vec4 v) {
 	return (*this)*Mat4(
 			Vec4(4, 1., 0., 0., v[0]),
 			Vec4(4, 0., 1., 0., v[1]),
 			Vec4(4, 0., 0., 1., v[2]),
 			Vec4(4, 0., 0., 0., 1.));
+}
+
+Mat4 Mat4::translate(Vec4 v) {
+	return (*this)*Mat4(
+			Vec4(4, 1., 0., 0., 0.),
+			Vec4(4, 0., 1., 0., 0.),
+			Vec4(4, 0., 0., 1., 0.),
+			Vec4(4, v[0], v[1], v[2], 1.));
 }
 
 Mat4 Mat4::scale(Vec4 v) {
@@ -121,7 +165,7 @@ Mat4 Mat4::scale(Vec4 v) {
 }
 
 Mat4 Mat4::rotate(Vec4 v, floatv angle) {
-	Mat4 general_rotation = Mat4::createIdent();
+	Mat4 general_rotation = Mat4::ident();
 	if (v[0]) {
 		general_rotation = general_rotation * Mat4(
 				Vec4(4, 1., 0., 0., 0.),
