@@ -7,6 +7,7 @@
 #include "mat.hpp"
 #include "test.hpp"
 #include "vec4.hpp"
+#include "glprog.hpp"
 
 /*
 mat translate(mat, vec) m = tmat*mat, tmat =
@@ -65,70 +66,9 @@ const int HT = 480;
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
 
-GLuint linesShaderProgram;
 GLuint *vertexArrays;
 GLuint *buffer;
-GLint attribArray;
-
-namespace prog {
-
-	GLint readCompileShader(char *fileName, GLenum shaderType) {
-		ifstream fileToRead(fileName);
-		if (!fileToRead) {
-			cout << "No such file: " << fileName << endl;
-			exit(0);
-		}
-		fileToRead.seekg(0, fileToRead.end);
-		const GLint shaderLength[1] = {fileToRead.tellg()};
-		fileToRead.seekg(0, fileToRead.beg);
-		GLchar *textBuffer = new GLchar[shaderLength[0]];
-		fileToRead.read(textBuffer, shaderLength[0]);
-		const GLchar *shaderText[1] = {textBuffer};
-		GLint shaderId = glCreateShader(shaderType);
-		glShaderSource(shaderId, 1, shaderText, shaderLength);
-		delete [] textBuffer;
-		glCompileShader(shaderId);
-		GLint is_compiled;
-		glGetShaderiv(shaderId, GL_COMPILE_STATUS, &is_compiled);
-		if (!is_compiled) {
-			GLint log_length = 0;
-			glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &log_length);
-			GLchar *info_log = new GLchar[log_length];
-			GLint returned_length = 0;
-			glGetShaderInfoLog(shaderId, log_length, &returned_length, info_log);
-			glDeleteShader(shaderId);
-			cout << "Shader compilation error in " << fileName;
-			cout << '\n' << info_log;
-			delete [] info_log;
-			exit(0);
-		}
-		return shaderId;
-	}
-
-	GLuint CreateProgram(char *sh1name, GLenum sh1type, char *sh2name, GLenum sh2type) {
-		GLint vertexShader = readCompileShader(sh1name, sh1type);
-		GLint fragmentShader = readCompileShader(sh2name, sh2type);
-		GLuint shaderProgram = glCreateProgram();
-		glAttachShader(shaderProgram, vertexShader);
-		glAttachShader(shaderProgram, fragmentShader);
-		GLint isLinkSuccesful;
-		glLinkProgram(shaderProgram);
-		glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinkSuccesful);
-		if (!isLinkSuccesful) {
-			GLint log_length = 0;
-			glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &log_length);
-			GLchar *info_log = new GLchar[log_length];
-			GLint returned_length = 0;
-			glGetProgramInfoLog(shaderProgram, log_length, &returned_length, info_log);
-			cout << "Program linking error\n" << info_log;
-			glDeleteProgram(shaderProgram);
-			delete [] info_log;
-			exit(0);
-		}
-		return shaderProgram;
-	}
-
-}
+Program lsProgram;
 
 const int h_lines = 20, v_lines = 20;
 float lines[h_lines*2*3 + v_lines*2*3];
@@ -158,18 +98,16 @@ namespace cl {
 
 void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	glUseProgram(linesShaderProgram);
+	lsProgram.Use();
 	//attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
 	glBindVertexArray(vertexArrays[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
 	glBufferData(GL_ARRAY_BUFFER, (h_lines*2*3 + v_lines*2*3) * sizeof(float), lines, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(attribArray);
-	glVertexAttribPointer(attribArray, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	lsProgram.EnableVertexAttribArray();
+	lsProgram.VertexAttribPointer(3, GL_FLOAT, GL_FALSE, 0, 0);
 	for(int i = 0; i < h_lines + v_lines; i++)
 		glDrawArrays(GL_LINES, i*2, 3);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 	glUseProgram(0);
 	glBindVertexArray(0);
 	glutSwapBuffers();
@@ -198,16 +136,16 @@ int main(int argc, char** argv) {
 	if (res != GLEW_OK)
 		return 1;
 
-	linesShaderProgram = prog::CreateProgram(
-		linesShaderName, GL_VERTEX_SHADER,
-		fragmentShaderName, GL_FRAGMENT_SHADER);
+	lsProgram = Program(
+		Shader(linesShaderName, GL_VERTEX_SHADER),
+		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
 
 	vertexArrays = new GLuint[1];
 	glGenVertexArrays(1, vertexArrays);
 	buffer = new GLuint[1];
 	glGenBuffers(1, buffer);
-	attribArray = glGetAttribLocation(linesShaderProgram, "vertexPosition");
-	glEnableVertexAttribArray(attribArray);
+	lsProgram.GetAttribAllocation("vertexPosition");
+	lsProgram.EnableVertexAttribArray();
 
 	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
 
