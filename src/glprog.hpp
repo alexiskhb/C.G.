@@ -6,17 +6,21 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "mat4.hpp"
+#include "mat.hpp"
+#include "vec4.hpp"
 
 class Shader {
 public:
 	GLuint handler;
-	Shader(char *fileName, GLenum shaderType);
+	Shader(const char *fileName, GLenum shaderType);
 };
 
 class Program {
 public:
 	GLuint handler;
 	GLint attribArray;
+	GLuint mvp_handler;
 	Program();
 	Program(const Shader &shader1, const Shader &shader2);
 	void GetAttribAllocation(const char *var) {
@@ -30,6 +34,12 @@ public:
 	}
 	void VertexAttribPointer(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer) {
 		glVertexAttribPointer(attribArray, size, type, normalized, stride, pointer);
+	}
+	void GetUniformLocation(const char *univar) {
+		mvp_handler = glGetUniformLocation(handler, univar);
+	}
+	void UniformMatrix(const Mat4 &matrix) {
+		glUniformMatrix4fv(mvp_handler, 1, GL_FALSE, matrix.data);
 	}
 };
 

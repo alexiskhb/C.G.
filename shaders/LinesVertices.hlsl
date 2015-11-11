@@ -1,7 +1,7 @@
 #version 330 core
 layout(location = 0) in vec3 vertexPosition;
-void main(void)
-{
-	gl_Position.xyz = vertexPosition;
-	gl_Position.w = 1.0;
+uniform mat4 trans;
+
+void main() {
+    gl_Position = trans*vec4(vertexPosition, 1.0);
 }

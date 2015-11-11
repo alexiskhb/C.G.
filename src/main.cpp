@@ -70,6 +70,8 @@ GLuint *vertexArrays;
 GLuint *buffer;
 Program lsProgram;
 
+Mat4 projection;
+
 const int h_lines = 20, v_lines = 20;
 float lines[h_lines*2*3 + v_lines*2*3];
 
@@ -113,6 +115,11 @@ void Render() {
 	glutSwapBuffers();
 }
 
+void handleKey(unsigned char key, int x, int y) {
+	std::cout << key;
+	std::cout.flush();
+}
+
 
 float mtr(int i, int j, int h, int w) {
 	return fabs(i + j*2);
@@ -131,6 +138,7 @@ int main(int argc, char** argv) {
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(CAPTION);
 	glutDisplayFunc(Render);
+	glutKeyboardFunc(handleKey);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
@@ -139,13 +147,18 @@ int main(int argc, char** argv) {
 	lsProgram = Program(
 		Shader(linesShaderName, GL_VERTEX_SHADER),
 		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
-
+	projection = Mat4(Vec4(4, 1., 0., 0., 0.), Vec4(4, 0., 1., 0., 1.), Vec4(4, 0., 0., 1., 1.), Vec4(4, 0., 0., 0., 1.));
+	cout << projection;
 	vertexArrays = new GLuint[1];
 	glGenVertexArrays(1, vertexArrays);
 	buffer = new GLuint[1];
 	glGenBuffers(1, buffer);
+	lsProgram.Use();
 	lsProgram.GetAttribAllocation("vertexPosition");
 	lsProgram.EnableVertexAttribArray();
+	lsProgram.GetUniformLocation("trans");
+	lsProgram.UniformMatrix(projection);
+
 
 	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
 

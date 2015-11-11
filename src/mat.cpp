@@ -122,8 +122,9 @@ void Mat::operatorAdd(Mat &result, Mat m, int sign) {
 }
 
 void Mat::makeIdent(Mat &target) {
-	for(int i = 0; i < min(target.height, target.width); i++)
-		target(i, i) = 1.0;
+	for(int i = 0; i < target.height; i++)
+		for(int j = 0; j < target.width; j++)
+			target(i, j) = i == j ? 1. : 0.;
 }
 
 void Mat::print(ostream &out) {

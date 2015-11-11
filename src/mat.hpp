@@ -44,7 +44,6 @@ public:
 	Mat operator*(const Mat &m);
 	Mat operator*(floatv value);
 ////
-protected:
 	floatv *data;
 	int datasize;
 ////

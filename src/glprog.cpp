@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Shader::Shader(char *fileName, GLenum aShaderType) {
+Shader::Shader(const char *fileName, GLenum aShaderType) {
 	ifstream fileToRead(fileName);
 	if (!fileToRead) {
 		cout << "No such file: " << fileName << endl;
@@ -38,11 +38,13 @@ Shader::Shader(char *fileName, GLenum aShaderType) {
 Program::Program() {
 	handler = 0;
 	attribArray = 0;
+	mvp_handler = 0;
 };
 
 Program::Program(const Shader &shader1, const Shader &shader2) {
 	handler = glCreateProgram();
 	attribArray = 0;
+	mvp_handler = 0;
 	glAttachShader(handler, shader1.handler);
 	glAttachShader(handler, shader2.handler);
 	GLint isLinkSuccesful;
