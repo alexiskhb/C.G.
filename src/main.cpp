@@ -21,7 +21,7 @@ mat rotate(mat, vec axis, angle)
 mat scale(mat, vec)
 then mult rmat*vetrex
 
-mat otrho(left, right, top, bottom, near, far) //cuts
+mat ortho(left, right, top, bottom, near, far) //cuts
 mat frustum(left, right, top, bottom, near, far) //cut pyramide
 mat perspective(field_of_view_y(angle), aspect_relative(=w/h), near, far)
 r2mat
@@ -34,10 +34,10 @@ int w, h
 vec position, targetview, side
 
   /
-  | sidex, sidey, sidez, 0
-  | ypx, upy, upz, 0
-  | targetx, ty, tz, 0
-  | 0 0 0 1
+  | sidex, sidey, sidez, x
+  | ypx, upy, upz, y
+  | targetx, ty, tz, z
+  | 0 0 0 1 ------ view
   \
  *
  x
@@ -61,10 +61,13 @@ lookAt(vec pos, target, side)
 
 using namespace std;
 
-const int WT = 640;
-const int HT = 640;
+const int WT = 1366./2;
+const int HT = 768./2;
 
-const float step = 0.07;
+float stepY = 0.5;
+float stepX = 0.5;
+float angleZ = 0.;
+float angleX = 0.;
 
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
@@ -78,14 +81,9 @@ Mat4 model;
 Mat4 view;
 Mat4 projection;
 
-Mat4 scale;
-Mat4 rotatem;
-Mat4 perspective;
-Mat4 translate;
-
 Camera camera;
 
-const int h_lines = 20, v_lines = 20;
+const int h_lines = 500, v_lines = 500;
 float lines[h_lines*2*3 + v_lines*2*3];
 
 namespace cl {
@@ -101,12 +99,12 @@ namespace cl {
 
 	void CreateLines() {
 		for(int i = 0; i < h_lines; i += 2) {
-			SetLine(    i*6, -1.,  1./h_lines*i, 1.,  1./h_lines*i);
-			SetLine((i+1)*6, -1., -1./h_lines*i, 1., -1./h_lines*i);
+			SetLine(    i*6, -100.,  100./h_lines*i, 100.,  100./h_lines*i);
+			SetLine((i+1)*6, -100., -100./h_lines*i, 100., -100./h_lines*i);
 		}
 		for(int i = h_lines; i < h_lines + v_lines; i += 2) {
-			SetLine(    i*6,  1./v_lines*(i - h_lines), 1.,  1./v_lines*(i - h_lines), -1.);
-			SetLine((i+1)*6, -1./v_lines*(i - h_lines), 1., -1./v_lines*(i - h_lines), -1.);
+			SetLine(    i*6,  100./v_lines*(i - h_lines), 100.,  100./v_lines*(i - h_lines), -100.);
+			SetLine((i+1)*6, -100./v_lines*(i - h_lines), 100., -100./v_lines*(i - h_lines), -100.);
 		}
 	}
 }
@@ -114,7 +112,10 @@ namespace cl {
 void Render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	lsProgram.Use();
-	//attribArray = glGetAttribLocation(triangleShaderProgram, "vertexPosition");
+	std::cout << camera;
+	view = camera.GetView();
+	MVP  = projection * view * model;
+	lsProgram.UniformMatrix(MVP);
 	glBindVertexArray(vertexArrays[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
 	glBufferData(GL_ARRAY_BUFFER, (h_lines*2*3 + v_lines*2*3) * sizeof(float), lines, GL_STATIC_DRAW);
@@ -129,31 +130,36 @@ void Render() {
 }
 
 void handleKey(unsigned char key, int x, int y) {
-	(std::cout << key).flush();
 	if (key == 'w') {
-		camera.position += Vec4(4, 0., step);
+		camera.MoveForward(0.05);
 	}
 	if (key == 'a') {
-
+		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ -= 1.);
 	}
 	if (key == 's') {
-		camera.position += Vec4(4, 0., -step);
+		camera.MoveForward(-0.05);
 	}
 	if (key == 'd') {
-
+		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ += 1.);
 	}
 	if (key == 'z') {
-		camera.position += Vec4(4, 0., 0., step);
 	}
 	if (key == 'x') {
-		camera.position += Vec4(4, 0., 0., -step);
 	}
 	if (key == 'q') {
-
+		camera.MoveSideway(-0.05);
 	}
 	if (key == 'e') {
-
+		camera.MoveSideway(0.05);
 	}
+	if (key == 'u') {
+		camera.Rotate(Vec4(4, 1., 0., 0.), angleX += 1.);
+	}
+	if (key == 'j') {
+		camera.Rotate(Vec4(4, 1., 0., 0.), angleX -= 1.);
+	}
+
+	Render();
 }
 
 
@@ -162,13 +168,6 @@ float mtr(int i, int j, int h, int w) {
 }
 
 int main(int argc, char** argv) {
-
-	cl::CreateLines();
-	camera = Camera(
-			/*position*/Vec4(4, 0.7, 0., 1.),
-			/*look at*/Vec4(4, 0.7, 1., 1.),
-			/* head */Vec4(4, 0., 1.));
-
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -186,13 +185,19 @@ int main(int argc, char** argv) {
 		Shader(linesShaderName, GL_VERTEX_SHADER),
 		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
 
-	perspective = Mat4::ident().perspective(Vec4(4, 0., 1., 1.));
-	scale       = Mat4::ident().scale(Vec4(4, 1.5, 1., 1.5));
-	rotatem     = Mat4::ident().rotate(Vec4(4, 0., 1., 0.), -40);
-	translate   = Mat4::ident().translate(Vec4(4, -0., -0., 0.));
+//	perspective = Mat4::ident().perspective(Vec4(4, 0., 1., 1.));
+//	scale       = Mat4::ident().scale(Vec4(4, 1., 1., 2.));
+//	rotation     = Mat4::ident().rotate(Vec4(4, 0., 0., 0.), 45.);
+//	translation   = Mat4::ident().translated(Vec4(4, -1., -0., 1.));
 
-	view       = Mat4::ident();
-	projection = Mat4::ident();
+	cl::CreateLines();
+	camera = Camera(
+			/*position*/Vec4(4, 0., 1., 1.),
+			/*look at*/Vec4(4, 0., 0., 0.),
+			/* head */Vec4(4, 0., 1., 0.));
+
+	view       = camera.GetView();
+	projection = camera.projectionMatrix(30., 1366./768., 1., 100.);
 	model      = Mat4::ident();
 
 	MVP = projection * view * model;

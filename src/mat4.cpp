@@ -148,7 +148,7 @@ Mat4 Mat4::perspective(Vec4 v) {
 			Vec4(4, 0., 0., 0., 1.));
 }
 
-Mat4 Mat4::translate(Vec4 v) {
+Mat4 Mat4::translated(Vec4 v) {
 	return (*this)*Mat4(
 			Vec4(4, 1., 0., 0., 0.),
 			Vec4(4, 0., 1., 0., 0.),
@@ -166,14 +166,15 @@ Mat4 Mat4::scale(Vec4 v) {
 
 Mat4 Mat4::rotate(Vec4 v, floatv angle) {
 	Mat4 general_rotation = Mat4::ident();
-	if (v[0]) {
+	angle = angle/180.*M_PI;
+	if (fabs(v[0]) >= epsilon) {
 		general_rotation = general_rotation * Mat4(
 				Vec4(4, 1., 0., 0., 0.),
 				Vec4(4, 0., cos(angle), -sin(angle), 0.),
 				Vec4(4, 0., sin(angle),  cos(angle), 0.),
 				Vec4(4, 0., 0., 0., 1.));
 	}
-	if (v[1]) {
+	if (fabs(v[1]) >= epsilon) {
 		general_rotation = general_rotation * Mat4(
 				Vec4(4,  cos(angle), 0., sin(angle), 0.),
 				Vec4(4, 0., 1., 0., 0.),
@@ -181,7 +182,7 @@ Mat4 Mat4::rotate(Vec4 v, floatv angle) {
 				Vec4(4, 0., 0., 0., 1.));
 
 	}
-	if (v[2]) {
+	if (fabs(v[2]) >= epsilon) {
 		general_rotation = general_rotation * Mat4(
 				Vec4(4, cos(angle), -sin(angle), 0., 0.),
 				Vec4(4, sin(angle),  cos(angle), 0., 0.),
@@ -191,6 +192,7 @@ Mat4 Mat4::rotate(Vec4 v, floatv angle) {
 	}
 	return general_rotation*(*this);
 }
+
 
 Mat4::~Mat4() {
 	//delete [] this->data;

@@ -34,22 +34,23 @@ Mat4 Vec4::operator*(const Vec4 &v) {
 Vec4 Vec4::normalized() {
 	Vec4 result = Vec4(4);
 	floatv normDivider = sqrt(degreedElSum(2));
-	if (!isValid() || normDivider < fabs(epsilon)) {
+	if (!isValid() || fabs(normDivider) < epsilon) {
+		std::cout << "ASFASFASFAS\nSGSDGSDGS\nFSGSFGFGS\n";
 		result.valid = isValid() ? VTDIVBYZERO : VTERR;
 		return result;
 	}
-	for(int i = 0; i < this->width*this->height; i++)
+	for(int i = 0; i < this->width*this->height - 1; i++)
 		result[i] = (*this)[i] / normDivider;
 	return result;
 }
 
-void Vec4::normalize() {
+void Vec4::normalize3() {
 	floatv normDivider = sqrt(degreedElSum(2));
-	if (!isValid() || normDivider < fabs(epsilon)) {
+	if (!isValid() || fabs(normDivider) < epsilon) {
 		this->valid = isValid() ? VTDIVBYZERO : VTERR;
 		return;
 	}
-	for(int i = 0; i < this->width*this->height; i++)
+	for(int i = 0; i < this->width*this->height - 1; i++)
 		(*this)[i] = (*this)[i] / normDivider;
 }
 

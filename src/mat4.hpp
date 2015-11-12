@@ -5,6 +5,8 @@
 #include "vec4.hpp"
 #include <cmath>
 
+#define _USE_MATH_DEFINES
+
 class Mat4 : public Mat {
 ////
 public:
@@ -40,7 +42,7 @@ public:
 	Mat4 multMatr3(Mat4 m);
 ////
 	Mat4 perspective(Vec4 v);
-	Mat4 translate(Vec4 v);
+	Mat4 translated(Vec4 v);
 	Mat4 scale(Vec4 v);
 	Mat4 rotate(Vec4 v, floatv angle);
 };
