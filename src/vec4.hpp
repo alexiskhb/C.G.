@@ -14,6 +14,8 @@ public:
 		double a[size] = {args...};
 		for(int i = 0; i < std::min(size, asize); i++)
 			data[i] = static_cast<floatv>(a[i]);
+		for(int i = std::min(size, asize); i < std::max(size, asize); i++)
+			data[i] = 0.;
 	}
 	Vec4(const Vec4& orig);
 	Vec4(ValidityT validity) : Mat(validity) {};

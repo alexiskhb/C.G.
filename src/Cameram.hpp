@@ -12,14 +12,22 @@ public:
 	Vec4 target;
 	Vec4 head;
 	Camera();
-	Camera(Vec4 p, Vec4 l, Vec4 u) : position(p.normalized()), target(l.normalized()), head(u.normalized()) {};
+	Camera(Vec4 p, Vec4 l, Vec4 u) : position(p), target(l), head(u) {};
 	Vec4 dir() {
-		return Vec4(4, - target[0] + position[0], - target[1] + position[1], - target[2] + position[2]).normalized();
+		return (position - target).normalized();
 	};
+	Vec4 worldUp() {
+		return Vec4(4, 0., 1., 0.);
+	};
+	Vec4 rightHand() {
+		return (worldUp().cross3(dir())).normalized();
+	}
+	Vec4 camUp() {
+		return (dir().cross3(rightHand())).normalized();
+	}
 	void MoveForward(const float speed);
 	void MoveSideway(const float speed);
 	void Rotate(const Vec4 &axis, const float angle);
-	void lookAt(Vec4 target);
 	Mat4 GetView();
 	Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
 	Mat4 perspective(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);

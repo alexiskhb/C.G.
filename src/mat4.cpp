@@ -150,10 +150,10 @@ Mat4 Mat4::perspective(Vec4 v) {
 
 Mat4 Mat4::translated(Vec4 v) {
 	return (*this)*Mat4(
-			Vec4(4, 1., 0., 0., 0.),
-			Vec4(4, 0., 1., 0., 0.),
-			Vec4(4, 0., 0., 1., 0.),
-			Vec4(4, v[0], v[1], v[2], 1.));
+			Vec4(4, 1., 0., 0., v[0]),
+			Vec4(4, 0., 1., 0., v[1]),
+			Vec4(4, 0., 0., 1., v[2]),
+			Vec4(4, 0., 0., 0., 1.));
 }
 
 Mat4 Mat4::scale(Vec4 v) {

@@ -69,6 +69,8 @@ float stepX = 0.5;
 float angleZ = 0.;
 float angleX = 0.;
 
+float speed = 0.08;
+
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
 
@@ -83,7 +85,8 @@ Mat4 projection;
 
 Camera camera;
 
-const int h_lines = 500, v_lines = 500;
+const int h_lines = 8, v_lines = 2;
+const float areaR = 50.;
 float lines[h_lines*2*3 + v_lines*2*3];
 
 namespace cl {
@@ -97,15 +100,41 @@ namespace cl {
 		lines[e  + 2] = 0.;
 	}
 
+	void SetLine(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2) {
+		SetLine(st, x1, y1, x2, y2);
+		int e = st + 3;
+		lines[st + 2] = z1;
+		lines[e  + 2] = z2;
+	}
+
 	void CreateLines() {
+		SetLine(0,    .5, .5, .5,  .5, -.5, .5);
+		SetLine(6,   .5, -.5, .5, -.5, -.5, .5);
+		SetLine(12, -.5, -.5, .5, -.5,  .5, .5);
+		SetLine(18,  -.5, .5, .5,  .5,  .5, .5);
+
+		SetLine(24,   .5, .5, -.5,  .5, -.5, -.5);
+		SetLine(30,  .5, -.5, -.5, -.5, -.5, -.5);
+		SetLine(36, -.5, -.5, -.5, -.5,  .5, -.5);
+		SetLine(42,  -.5, .5, -.5,  .5,  .5, -.5);
+
+		SetLine(48, .5,  .5, .5, .5, .5,  -.5);
+		SetLine(54, .5, -.5, .5, .5, -.5, -.5);
+
+
+
+		return;
 		for(int i = 0; i < h_lines; i += 2) {
-			SetLine(    i*6, -100.,  100./h_lines*i, 100.,  100./h_lines*i);
-			SetLine((i+1)*6, -100., -100./h_lines*i, 100., -100./h_lines*i);
+			SetLine(    i*6, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
+			SetLine((i+1)*6, -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
 		}
 		for(int i = h_lines; i < h_lines + v_lines; i += 2) {
-			SetLine(    i*6,  100./v_lines*(i - h_lines), 100.,  100./v_lines*(i - h_lines), -100.);
-			SetLine((i+1)*6, -100./v_lines*(i - h_lines), 100., -100./v_lines*(i - h_lines), -100.);
+			SetLine(    i*6,  areaR/v_lines*(i - h_lines), areaR,  areaR/v_lines*(i - h_lines), -areaR);
+			SetLine((i+1)*6, -areaR/v_lines*(i - h_lines), areaR, -areaR/v_lines*(i - h_lines), -areaR);
 		}
+		SetLine(0, 0., 0., 0., 0.);
+		lines[2] =  2000.;
+		lines[5] = -2000.;
 	}
 }
 
@@ -131,13 +160,13 @@ void Render() {
 
 void handleKey(unsigned char key, int x, int y) {
 	if (key == 'w') {
-		camera.MoveForward(0.05);
+		camera.MoveForward(-speed);
 	}
 	if (key == 'a') {
 		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ -= 1.);
 	}
 	if (key == 's') {
-		camera.MoveForward(-0.05);
+		camera.MoveForward(speed);
 	}
 	if (key == 'd') {
 		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ += 1.);
@@ -147,10 +176,10 @@ void handleKey(unsigned char key, int x, int y) {
 	if (key == 'x') {
 	}
 	if (key == 'q') {
-		camera.MoveSideway(-0.05);
+		camera.MoveSideway(-speed);
 	}
 	if (key == 'e') {
-		camera.MoveSideway(0.05);
+		camera.MoveSideway(speed);
 	}
 	if (key == 'u') {
 		camera.Rotate(Vec4(4, 1., 0., 0.), angleX += 1.);
@@ -185,20 +214,15 @@ int main(int argc, char** argv) {
 		Shader(linesShaderName, GL_VERTEX_SHADER),
 		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
 
-//	perspective = Mat4::ident().perspective(Vec4(4, 0., 1., 1.));
-//	scale       = Mat4::ident().scale(Vec4(4, 1., 1., 2.));
-//	rotation     = Mat4::ident().rotate(Vec4(4, 0., 0., 0.), 45.);
-//	translation   = Mat4::ident().translated(Vec4(4, -1., -0., 1.));
-
 	cl::CreateLines();
 	camera = Camera(
-			/*position*/Vec4(4, 0., 1., 1.),
-			/*look at*/Vec4(4, 0., 0., 0.),
-			/* head */Vec4(4, 0., 1., 0.));
+			/*position*/Vec4(4, 0., 0.2, 3.),
+			/*target*/Vec4(4, 0., 0., 0.),
+			/*head*/Vec4(4, 0., 1., 0.));
 
 	view       = camera.GetView();
-	projection = camera.projectionMatrix(30., 1366./768., 1., 100.);
-	model      = Mat4::ident();
+	projection = camera.projectionMatrix(45., 1366./768., 0.1, 100.);
+	model      = Mat4::ident().translated(Vec4(4, .2, .2, 0.));
 
 	MVP = projection * view * model;
 
@@ -213,7 +237,7 @@ int main(int argc, char** argv) {
 	lsProgram.UniformMatrix(MVP);
 
 
-	glClearColor(0.2f, 0.3f, 0.4f, 0.0f);
+	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
 
 	glutMainLoop();
 
