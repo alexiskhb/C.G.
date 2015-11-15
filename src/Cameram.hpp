@@ -5,6 +5,7 @@
 #include "vec4.hpp"
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 
 class Camera {
 public:
@@ -30,12 +31,17 @@ public:
 	void Rotate(const Vec4 &axis, const float angle);
 	Mat4 GetView();
 	Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
-	Mat4 perspective(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
+	Mat4 projectionMatrix(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
 	Mat4 ortho(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
+	Mat4 ortho2(floatv fov, floatv aspect, floatv near, floatv far) {
+		floatv top = tan(fov/2.)*near, bottom = -top, right = top*aspect, left = -right;
+		return ortho(left, right, top, bottom, near, far);
+	}
 	friend std::ostream& operator<<(std::ostream &out, Camera c) {
-		out << c.position[0] << "x " << c.position[1] << "y " << c.position[2] << "z pos| ";
-		out << c.target[0]   << "x " << c.target[1]   << "y " << c.target[2]   << "z targ| ";
-		out << c.head[0]     << "x " << c.head[1]     << "y " << c.head[2]     << "z head|\n";
+		std::fixed(out);
+		out << "P: " << std::setprecision(3) << c.position[0] << "x " << c.position[1] << "y " << c.position[2] << "z " << c.position[3] << "w";
+		out << "\nT: " << std::setprecision(3) << c.target[0]   << "x " << c.target[1]   << "y " << c.target[2] << "z " << c.target[3] << "w\n\n";
+		//out << std::setprecision(3) << c.head[0]     << "x " << c.head[1]     << "y " << c.head[2]     << "z head|\n";
 		return out;
 	}
 };

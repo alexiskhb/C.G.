@@ -6,68 +6,47 @@ Camera::Camera() {
 
 void Camera::MoveForward(const float speed) {
 	Vec4 direction = dir();
-	this->position[0] += speed * direction[0];
-	this->position[1] += speed * direction[1];
-	this->position[2] += speed * direction[2];
-
-	this->target[0] += speed * direction[0];
-	this->target[1] += speed * direction[1];
-	this->target[2] += speed * direction[2];
+	this->position += direction * speed;
+	this->target   += direction * speed;
 }
 
 void Camera::MoveSideway(const float speed) {
-	Vec4 direction = rightHand();//(dir().cross3(camUp())).normalized();
-	this->position[0] += speed * direction[0];
-	this->position[1] += speed * direction[1];
-	this->position[2] += speed * direction[2];
-
-	this->target[0] += speed * direction[0];
-	this->target[1] += speed * direction[1];
-	this->target[2] += speed * direction[2];
+	Vec4 direction = (camUp().cross3(dir())).normalized();
+	this->position += direction * speed;
+	this->target   += direction * speed;
 }
 
 void Camera::Rotate(const Vec4 &axis, const float angle) {
 	float cosx = cos(angle/180.*M_PI);
 	float sinx = sin(angle/180.*M_PI);
-	Vec4 newTarget;
-	Vec4 direction = dir();
 	floatv x = axis.data[0], y = axis.data[1], z = axis.data[2];
-
 	Mat4 rotation = Mat4(
-			Vec4(4, cosx + x*x*(1 - cosx), x*y*(1 - cosx) - z*sinx, x*z*(1 - cosx) + y*sinx),
-			Vec4(4, x*y*(1 - cosx) + z*sinx, cosx + y*y*(1 - cosx), y*z*(1 - cosx) - x*sinx),
-			Vec4(4, z*x*(1 - cosx) - y*sinx, y*z*(1 - cosx) + x*sinx, cosx + z*z*(1 - cosx)),
-			Vec4(4));
+		Vec4(4, cosx + x*x*(1 - cosx), x*y*(1 - cosx) - z*sinx, x*z*(1 - cosx) + y*sinx),
+		Vec4(4, x*y*(1 - cosx) + z*sinx, cosx + y*y*(1 - cosx), y*z*(1 - cosx) - x*sinx),
+		Vec4(4, z*x*(1 - cosx) - y*sinx, y*z*(1 - cosx) + x*sinx, cosx + z*z*(1 - cosx)),
+		Vec4(4));
 
-	newTarget[0]  = ((1 - cosx)*x*x + cosx)   * direction[0];
-	newTarget[0] += ((1 - cosx)*x*y - z*sinx) * direction[1];
-	newTarget[0] += ((1 - cosx)*x*z + y*sinx) * direction[2];
-
-	newTarget[1]  = ((1 - cosx)*x*y + z*sinx) * direction[0];
-	newTarget[1] += ((1 - cosx)*y*y + cosx)   * direction[1];
-	newTarget[1] += ((1 - cosx)*y*z - x*sinx) * direction[2];
-
-	newTarget[2]  = ((1 - cosx)*x*z - y*sinx) * direction[0];
-	newTarget[2] += ((1 - cosx)*y*z + x*sinx) * direction[1];
-	newTarget[2] += ((1 - cosx)*z*z + cosx)   * direction[2];
-
-	target = (position + newTarget).normalized();
+	this->target = (rotation*this->target).normalized();
 }
 
 Mat4 Camera::GetView() {
+	Vec4
+			c = dir(),
+			a = (worldUp().cross3(c)).normalized(),
+			b = (c.cross3(a)).normalized();
+	if (false)
 	return
-			Mat4(rightHand(), worldUp(), dir(), Vec4(4))*
+			Mat4(a, b, c, Vec4(4, 0., 0., 0., 1.))*
 			Mat4(
 				Vec4(4, 1., 0., 0., -position[0]),
 				Vec4(4, 0., 1., 0., -position[1]),
 				Vec4(4, 0., 0., 1., -position[2]),
 				Vec4(4, 0., 0., 0., 1.));
-//
-//	r(0, 0) = R[0]; r(0, 1) = R[1]; r(0, 2) = R[2]; r(0, 3) = position[0];
-//	r(1, 0) = U[0]; r(1, 1) = U[1]; r(1, 2) = U[2]; r(1, 3) = position[1];
-//	r(2, 0) = T[0]; r(2, 1) = T[1]; r(2, 2) = T[2]; r(2, 3) = position[2];
-//	r(3, 0) = 0.0 ; r(3, 1) = 0.0 ; r(3, 2) = 0.0 ; r(3, 3) = 1.;
-//
+	return Mat4(
+		Vec4(4, a[0], b[0], c[0], -position[0]),
+		Vec4(4, a[1], b[1], c[1], -position[1]),
+		Vec4(4, a[2], b[2], c[2], -position[2]),
+		Vec4(4, 0.  , 0., 0., 1.));
 }
 
 
@@ -78,7 +57,7 @@ Mat4 Camera::projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far
 		bottom = -top,
 		right = top*aspect,
 		left = -right;
-	return perspective(left, right, top, bottom, near, far);
+	return projectionMatrix(left, right, top, bottom, near, far);
 }
 
 Mat4 Camera::ortho(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far) {
@@ -89,7 +68,7 @@ Mat4 Camera::ortho(floatv left, floatv right, floatv top, floatv bottom, floatv 
 		Vec4(4, 0., 0., 0., 1.));
 }
 
-Mat4 Camera::perspective(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far) {
+Mat4 Camera::projectionMatrix(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far) {
 	return Mat4(
 		Vec4(4, 2.*near/(right - left), 0., (right + left)/(right - left)),
 		Vec4(4, 0., 2.*near/(top - bottom), (top + bottom)/(top - bottom)),

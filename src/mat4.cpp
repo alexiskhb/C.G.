@@ -140,7 +140,7 @@ Mat4 Mat4::inversed() {
 	return res;
 }
 
-Mat4 Mat4::perspective(Vec4 v) {
+Mat4 Mat4::whatTheFunc(Vec4 v) {
 	return (*this)*Mat4(
 			Vec4(4, 1., 0., 0., v[0]),
 			Vec4(4, 0., 1., 0., v[1]),

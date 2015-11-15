@@ -41,7 +41,7 @@ public:
 	Mat4 inversed();
 	Mat4 multMatr3(Mat4 m);
 ////
-	Mat4 perspective(Vec4 v);
+	Mat4 whatTheFunc(Vec4 v);
 	Mat4 translated(Vec4 v);
 	Mat4 scale(Vec4 v);
 	Mat4 rotate(Vec4 v, floatv angle);

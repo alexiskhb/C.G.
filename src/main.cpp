@@ -61,15 +61,15 @@ lookAt(vec pos, target, side)
 
 using namespace std;
 
-const int WT = 1366./2;
-const int HT = 768./2;
+const float WT = 1366./2;
+const float HT = 768./2;
 
 float stepY = 0.5;
 float stepX = 0.5;
 float angleZ = 0.;
 float angleX = 0.;
 
-float speed = 0.08;
+float speed = 0.15;
 
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
@@ -82,6 +82,7 @@ Mat4 MVP;
 Mat4 model;
 Mat4 view;
 Mat4 projection;
+Mat4 ortho;
 
 Camera camera;
 
@@ -139,12 +140,14 @@ namespace cl {
 }
 
 void Render() {
-	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	lsProgram.Use();
-	std::cout << camera;
 	view = camera.GetView();
+	projection = camera.projectionMatrix(35., WT/HT, 0.1, 100.);
+	cout << camera << view << endl;
 	MVP  = projection * view * model;
-	lsProgram.UniformMatrix(MVP);
+	lsProgram.UniformMatrix(MVP.transposed());
 	glBindVertexArray(vertexArrays[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
 	glBufferData(GL_ARRAY_BUFFER, (h_lines*2*3 + v_lines*2*3) * sizeof(float), lines, GL_STATIC_DRAW);
@@ -160,32 +163,32 @@ void Render() {
 
 void handleKey(unsigned char key, int x, int y) {
 	if (key == 'w') {
-		camera.MoveForward(-speed);
-	}
-	if (key == 'a') {
-		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ -= 1.);
-	}
-	if (key == 's') {
 		camera.MoveForward(speed);
 	}
+	if (key == 'a') {
+		camera.Rotate(camera.camUp(), -2.);
+	}
+	if (key == 's') {
+		camera.MoveForward(-speed);
+	}
 	if (key == 'd') {
-		camera.Rotate(Vec4(4, 0., 0., 1.), angleZ += 1.);
+		camera.Rotate(camera.camUp(), 2.);
 	}
 	if (key == 'z') {
 	}
 	if (key == 'x') {
 	}
 	if (key == 'q') {
-		camera.MoveSideway(-speed);
-	}
-	if (key == 'e') {
 		camera.MoveSideway(speed);
 	}
+	if (key == 'e') {
+		camera.MoveSideway(-speed);
+	}
 	if (key == 'u') {
-		camera.Rotate(Vec4(4, 1., 0., 0.), angleX += 1.);
+		camera.Rotate(camera.rightHand(), 2.);
 	}
 	if (key == 'j') {
-		camera.Rotate(Vec4(4, 1., 0., 0.), angleX -= 1.);
+		camera.Rotate(camera.rightHand(), -2.);
 	}
 
 	Render();
@@ -205,6 +208,7 @@ int main(int argc, char** argv) {
 	glutCreateWindow(CAPTION);
 	glutDisplayFunc(Render);
 	glutKeyboardFunc(handleKey);
+	glEnable(GL_DEPTH_TEST);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
@@ -216,13 +220,14 @@ int main(int argc, char** argv) {
 
 	cl::CreateLines();
 	camera = Camera(
-			/*position*/Vec4(4, 0., 0.2, 3.),
-			/*target*/Vec4(4, 0., 0., 0.),
+			/*position*/Vec4(4, 0., 0., 0.),
+			/*target*/Vec4(4, 4., 0., 0.),
 			/*head*/Vec4(4, 0., 1., 0.));
 
 	view       = camera.GetView();
-	projection = camera.projectionMatrix(45., 1366./768., 0.1, 100.);
-	model      = Mat4::ident().translated(Vec4(4, .2, .2, 0.));
+	projection = camera.projectionMatrix(35., WT/HT, 0.5, 20.);
+	model      = Mat4::ident().translated(Vec4(4, 4., .0, 0.));
+	ortho = camera.ortho(0., WT, 0., HT, 0.1, 100.);
 
 	MVP = projection * view * model;
 
