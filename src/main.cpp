@@ -70,6 +70,7 @@ float angleZ = 0.;
 float angleX = 0.;
 
 float speed = 0.15;
+float rotateSpeed = 1.15;
 
 char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
 char linesShaderName[] = "../shaders/LinesVertices.hlsl";
@@ -85,20 +86,20 @@ Mat4 projection;
 Mat4 ortho;
 
 Camera camera;
-
-const int h_lines = 8, v_lines = 2;
-const float areaR = 50.;
+//8, 2
+const int h_lines = 100, v_lines = 100;
+const float areaR = 200.;
 float lines[h_lines*2*3 + v_lines*2*3];
 
 namespace cl {
 	void SetLine(int st, floatv x1, floatv y1, floatv x2, floatv y2) {
 		int e = st + 3;
 		lines[st    ] = x1;
-		lines[st + 1] = y1;
-		lines[st + 2] = 0.;
+		lines[st + 1] = 0.;
+		lines[st + 2] = y1;
 		lines[e     ] = x2;
-		lines[e  + 1] = y2;
-		lines[e  + 2] = 0.;
+		lines[e  + 1] = 0.;
+		lines[e  + 2] = y2;
 	}
 
 	void SetLine(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2) {
@@ -122,9 +123,7 @@ namespace cl {
 		SetLine(48, .5,  .5, .5, .5, .5,  -.5);
 		SetLine(54, .5, -.5, .5, .5, -.5, -.5);
 
-
-
-		return;
+//		return;
 		for(int i = 0; i < h_lines; i += 2) {
 			SetLine(    i*6, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
 			SetLine((i+1)*6, -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
@@ -133,9 +132,6 @@ namespace cl {
 			SetLine(    i*6,  areaR/v_lines*(i - h_lines), areaR,  areaR/v_lines*(i - h_lines), -areaR);
 			SetLine((i+1)*6, -areaR/v_lines*(i - h_lines), areaR, -areaR/v_lines*(i - h_lines), -areaR);
 		}
-		SetLine(0, 0., 0., 0., 0.);
-		lines[2] =  2000.;
-		lines[5] = -2000.;
 	}
 }
 
@@ -144,8 +140,8 @@ void Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	lsProgram.Use();
 	view = camera.GetView();
-	projection = camera.projectionMatrix(35., WT/HT, 0.1, 100.);
 	cout << camera << view << endl;
+	cout << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
 	MVP  = projection * view * model;
 	lsProgram.UniformMatrix(MVP.transposed());
 	glBindVertexArray(vertexArrays[0]);
@@ -166,17 +162,19 @@ void handleKey(unsigned char key, int x, int y) {
 		camera.MoveForward(speed);
 	}
 	if (key == 'a') {
-		camera.Rotate(camera.camUp(), -2.);
+		camera.Rotate(camera.head, -rotateSpeed);
 	}
 	if (key == 's') {
 		camera.MoveForward(-speed);
 	}
 	if (key == 'd') {
-		camera.Rotate(camera.camUp(), 2.);
+		camera.Rotate(camera.head, rotateSpeed);
 	}
 	if (key == 'z') {
+		camera.MoveUp(speed);
 	}
 	if (key == 'x') {
+		camera.MoveUp(-speed);
 	}
 	if (key == 'q') {
 		camera.MoveSideway(speed);
@@ -185,15 +183,25 @@ void handleKey(unsigned char key, int x, int y) {
 		camera.MoveSideway(-speed);
 	}
 	if (key == 'u') {
-		camera.Rotate(camera.rightHand(), 2.);
+		camera.Rotate(camera.rightHand(), rotateSpeed);
 	}
 	if (key == 'j') {
-		camera.Rotate(camera.rightHand(), -2.);
+		camera.Rotate(camera.rightHand(), -rotateSpeed);
+	}
+	if (key == 'p') {
+		speed = (abs((int)(speed*100) + 15)%300)/100.;
+	}
+	if (key == 'l') {
+		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%100)/100.;
 	}
 
 	Render();
 }
 
+int prevx, prevy;
+void handleMouse(int x, int y) {
+
+}
 
 float mtr(int i, int j, int h, int w) {
 	return fabs(i + j*2);
@@ -208,6 +216,7 @@ int main(int argc, char** argv) {
 	glutCreateWindow(CAPTION);
 	glutDisplayFunc(Render);
 	glutKeyboardFunc(handleKey);
+	glutMotionFunc(handleMouse);
 	glEnable(GL_DEPTH_TEST);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
@@ -221,13 +230,13 @@ int main(int argc, char** argv) {
 	cl::CreateLines();
 	camera = Camera(
 			/*position*/Vec4(4, 0., 0., 0.),
-			/*target*/Vec4(4, 4., 0., 0.),
+			/*target*/Vec4(4, 4., 0., 4.),
 			/*head*/Vec4(4, 0., 1., 0.));
 
 	view       = camera.GetView();
-	projection = camera.projectionMatrix(35., WT/HT, 0.5, 20.);
-	model      = Mat4::ident().translated(Vec4(4, 4., .0, 0.));
-	ortho = camera.ortho(0., WT, 0., HT, 0.1, 100.);
+	projection = camera.projectionMatrix(45., WT/HT, 0.1, 100.);
+	model      = Mat4::ident().translated(Vec4(4, 0., .0, 4.));
+	ortho = camera.ortho(0., WT, 0., HT, 0.1, 200.);
 
 	MVP = projection * view * model;
 
@@ -242,61 +251,13 @@ int main(int argc, char** argv) {
 	lsProgram.UniformMatrix(MVP);
 
 
-	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
+//	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
+	glClearColor(3*.136, 3*.194, 3*.252, 0.5f);
 
 	glutMainLoop();
 
 	return 0;
 }
-
-//��������� ������ �������	
-///������� ����� ������� � ������ ������
-///GL_int shader_obj = glCreateShader, GL_VERTEX_SHADER, GL_PIXEL_SHADER
-///glShaderSource(shader_obj, ...)
-///glCompileShader -- ������ ������
-///int status; glGetShaderiv(shader_obj, GL_COMPILE_STATUS, &status); GL_FALSE => ��� ���������
-///glDeleteShader(shader_obj) ���� ��� �����
-
-//��������� ������ ����������
-///��. ����
-
-//��������� ��������� (��� ������)
-///type? prg_obj = glCreateProgram(void)
-
-//��������� ������� � ��������� ���������
-///glAttachShader(prg_obj, shader_obj)
-///type? link_status = glLinkProgram(prg_obj)
-///glGetProgramiv()
-
-//������� ��������� ��������� � �������
-
-//Render():
-//glClear(GL_COLOR_BUFFER_BIT)
-//glUseProgram(...)
-//glBindVertexArray(...)
-//glDrawArrays(GL_TRIANGLES, 0, 3);
-//glUse 0, glBind 0
-//glutSwapBuffers();
-
-//** glUseProgram(sp)
-
-//* glGenVertexArrays(count, &vao)
-//* glBindVertexArray(vao_id)
-
-//glGenBuffers(count, &buf__id)
-//glBindBuffer(GL_ARRAY_BUFFER, buf_id)
-//glBufferData(GL_ARRAY_BUFFER, sizeOfBytes, &data, GL_STATIC_DRAW)
-//GL_int glGetAttribLocation(sp, var_name) ///returns var_id
-///sp - createprogram
-//glVertexAttribPointer(var_id, count(vec?), GL_FLOAT, GL_FALSE, 0, 0)
-//glEnableVertexAttribArray(var_id)
-//glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-//* glBindVertexArray(0)
-
-//**glUseProgram(0)
-
-//VBO, VAO
 
 
 //::testing::InitGoogleTest(&argc, argv);
