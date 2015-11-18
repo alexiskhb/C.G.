@@ -50,7 +50,7 @@ public:
 		std::fixed(out);
 		out << "P: " << std::setprecision(3) << c.position[0] << "x " << c.position[1] << "y " << c.position[2] << "z " << c.position[3] << "w";
 		out << "\nT: " << std::setprecision(3) << c.target[0]   << "x " << c.target[1]   << "y " << c.target[2] << "z " << c.target[3] << "w";
-		out << "\nD: " << std::setprecision(3) << c.dir()[0]   << "x " << c.dir()[1]   << "y " << c.dir()[2] << "z " << c.dir()[3] << "w\n\n";
+		out << "\nD: " << std::setprecision(3) << c.dir()[0]   << "x " << c.dir()[1]   << "y " << -c.dir()[2] << "z " << c.dir()[3] << "w\n\n";
 		return out;
 	}
 };

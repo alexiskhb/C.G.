@@ -9,6 +9,7 @@
 #include "vec4.hpp"
 #include "glprog.hpp"
 #include "Cameram.hpp"
+#include "lines.hpp"
 
 /*
 mat translate(mat, vec) m = tmat*mat, tmat =
@@ -63,15 +64,14 @@ using namespace std;
 
 const float WT = 1366./2;
 const float HT = 768./2;
-float speed = 0.15;
+float speed = 0.55;
 float rotateSpeed = 1.15;
+const int h_lines = 100, v_lines = 100;
 
-char fragmentShaderName[] = "../shaders/FragmentShader.hlsl";
-char linesShaderName[] = "../shaders/LinesVertices.hlsl";
-
-GLuint *vertexArrays;
-GLuint *buffer;
-Program gridProgram;
+char gridFragmentShaderName[] = "../shaders/gridFragmentShader.hlsl";
+char gridVertexShaderName[] = "../shaders/gridVertexShader.hlsl";
+char infoFragmentShaderName[] = "../shaders/infoFragmentShader.hlsl";
+char infoVertexShaderName[] = "../shaders/infoVertexShader.hlsl";
 
 Mat4 MVP;
 Mat4 model = Mat4::ident();
@@ -79,57 +79,33 @@ Mat4 view;
 Mat4 projection;
 
 Camera camera;
+Program gridProgram;
+Program infoProgram;
+Lines grid = Lines(h_lines + v_lines);
 
-namespace cl {
-	const int h_lines = 100, v_lines = 100;
+namespace cg {
 	const float areaR = 200.;
-	float lines[h_lines*2*3 + v_lines*2*3];
-
-	void SetLine(int st, floatv x1, floatv y1, floatv x2, floatv y2) {
-		int e = st + 3;
-		lines[st    ] = x1;
-		lines[st + 1] = 0.;
-		lines[st + 2] = y1;
-		lines[e     ] = x2;
-		lines[e  + 1] = 0.;
-		lines[e  + 2] = y2;
-	}
-
-	void SetLine(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2) {
-		SetLine(st, x1, y1, x2, y2);
-		int e = st + 3;
-		lines[st + 2] = z1;
-		lines[e  + 2] = z2;
-	}
-
-	void CreateLines() {
-		SetLine(0,    .5, .5, .5,  .5, -.5, .5);
-		SetLine(6,   .5, -.5, .5, -.5, -.5, .5);
-		SetLine(12, -.5, -.5, .5, -.5,  .5, .5);
-		SetLine(18,  -.5, .5, .5,  .5,  .5, .5);
-
-		SetLine(24,   .5, .5, -.5,  .5, -.5, -.5);
-		SetLine(30,  .5, -.5, -.5, -.5, -.5, -.5);
-		SetLine(36, -.5, -.5, -.5, -.5,  .5, -.5);
-		SetLine(42,  -.5, .5, -.5,  .5,  .5, -.5);
-
-		SetLine(48, .5,  .5, .5, .5, .5,  -.5);
-		SetLine(54, .5, -.5, .5, .5, -.5, -.5);
-
-//		return;
+	void CreateGrid() {
 		for(int i = 0; i < h_lines; i += 2) {
-			SetLine(    i*6, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
-			SetLine((i+1)*6, -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
+			grid.SetLine(    i, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
+			grid.SetLine((i+1), -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
 		}
 		for(int i = h_lines; i < h_lines + v_lines; i += 2) {
-			SetLine(    i*6,  areaR/v_lines*(i - h_lines), areaR,  areaR/v_lines*(i - h_lines), -areaR);
-			SetLine((i+1)*6, -areaR/v_lines*(i - h_lines), areaR, -areaR/v_lines*(i - h_lines), -areaR);
+			grid.SetLine(    i,  areaR/v_lines*(i - h_lines), areaR,  areaR/v_lines*(i - h_lines), -areaR);
+			grid.SetLine((i+1), -areaR/v_lines*(i - h_lines), areaR, -areaR/v_lines*(i - h_lines), -areaR);
 		}
 	}
 }
 
 struct CamInfo {
-	int a = 5;
+	Lines lines = Lines(7*2*3);
+	const int ox = 0, oy = 1, oz = 2, dir = 3, pitch = 4, ht = 5, htscale = 6;
+	void Draw(Camera cam, Program prog) {
+		lines.SetLine(dir, 0.5, .0, 0., cam.forward[0] + 0.5, -cam.forward[2], 0.);
+		lines.SetLine(pitch,  0., 0., 0., 0.5*cam.up.dot(cam.worldUp()), -cam.forward[1], 0.);
+		lines.SetLine(ht, -0.7, cam.position[1]/100, 0., -0.3, cam.position[1]/100, 0.);
+		lines.Draw(prog);
+	}
 } info;
 
 bool isPressed[256];
@@ -165,38 +141,40 @@ void handleKeys() {
 		camera.Rotate(camera.rightHand(), -rotateSpeed);
 	}
 	if (isPressed[(int)'p']) {
-		speed = (abs((int)(speed*100) + 15)%300)/100.;
+		speed = (abs((int)(speed*100) + 15)%1000)/100.;
 	}
 	if (isPressed[(int)'o']) {
-		speed = (abs((int)(speed*100) - 15)%300)/100.;
+		speed = (abs((int)(speed*100) - 15)%1000)/100.;
 	}
 	if (isPressed[(int)'l']) {
-		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%100)/100.;
+		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%1000)/100.;
 	}
 	if (isPressed[(int)'k']) {
-		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%100)/100.;
+		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%1000)/100.;
 	}
 }
 
 void Render() {
 	handleKeys();
-	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	gridProgram.Use();
+	gridProgram.FillUniform4fv("trans", MVP.data);
+	gridProgram.GetAttribAllocation("vertexPosition");
 	view = camera.GetView();
 	cout << camera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data);
-	glBindVertexArray(vertexArrays[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
-	glBufferData(GL_ARRAY_BUFFER, (cl::h_lines*2*3 + cl::v_lines*2*3) * sizeof(float), cl::lines, GL_STATIC_DRAW);
-	gridProgram.EnableVertexAttribArray();
-	gridProgram.VertexAttribPointer(3, GL_FLOAT, GL_FALSE, 0, 0);
-	for(int i = 0; i < cl::h_lines + cl::v_lines; i++)
-		glDrawArrays(GL_LINES, i*2, 3);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-	glBindVertexArray(0);
+	grid.Draw(gridProgram);
+
+
+	infoProgram.Use();
+	infoProgram.GetAttribAllocation("vertexPosition");
+	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
+	infoProgram.FillUniform4fv("trans", MVP.data);
+	infoProgram.UniformMatrix(MVP.transposed().data);
+	info.Draw(camera, infoProgram);
+
 	glutSwapBuffers();
 }
 
@@ -234,34 +212,33 @@ int main(int argc, char** argv) {
 		return 1;
 
 	gridProgram = Program(
-		Shader(linesShaderName, GL_VERTEX_SHADER),
-		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
+		Shader(gridVertexShaderName, GL_VERTEX_SHADER),
+		Shader(gridFragmentShaderName, GL_FRAGMENT_SHADER));
 
-	cl::CreateLines();
-	camera = Camera(
-			/*position*/Vec4(4, 0., 0., 0.),
-			/*target*/  Vec4(4, 4., 0., 4.),
-			/*up*/      Vec4(4, 0., 1., 0.));
 
+	infoProgram = Program(
+		Shader(infoVertexShaderName, GL_VERTEX_SHADER),
+		Shader(infoFragmentShaderName, GL_FRAGMENT_SHADER));
+
+
+	cg::CreateGrid();
+	camera = Camera(Vec4(4, 0., 1., 0.), Vec4(4, 4., 1., 4.), Vec4(4, 0., 1., 0.));
+
+	glGenVertexArrays(1, &grid.vertexArray);
+	glGenBuffers(1, &grid.buffer);
 	projection = camera.projectionMatrix(45., WT/HT, 0.1, 400.);
-
-	vertexArrays = new GLuint[1];
-	glGenVertexArrays(1, vertexArrays);
-	buffer = new GLuint[1];
-	glGenBuffers(1, buffer);
-	gridProgram.Use();
-	gridProgram.GetAttribAllocation("vertexPosition");
-	gridProgram.EnableVertexAttribArray();
-	gridProgram.FillUniform4fv("trans", MVP.data);
-
 
 	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
 //	glClearColor(3*.136, 3*.194, 3*.252, 0.5f);
+
+	glGenVertexArrays(1, &info.lines.vertexArray);
+	glGenBuffers(1, &info.lines.buffer);
+	info.lines.SetLine(info.ox, -.0,  0.,  0., .0, 0., 0.);
+	info.lines.SetLine(info.oy, .5 , -.9,  0., .5, .9, 0.);
+	info.lines.SetLine(info.oz, 0. , -.9,  0., 0., .9, 0.);//there is no mistake.
+	info.lines.SetLine(info.htscale, -.5, -.9, 0., -.5, .9, 0.);
 
 	glutMainLoop();
 
 	return 0;
 }
-//::testing::InitGoogleTest(&argc, argv);
-	//return RUN_ALL_TESTS();
-//	Vec4 v = Vec4(2, 5.1, 6.6);
