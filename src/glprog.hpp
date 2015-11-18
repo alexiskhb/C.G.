@@ -38,8 +38,12 @@ public:
 	void GetUniformLocation(const char *univar) {
 		mvp_handler = glGetUniformLocation(handler, univar);
 	}
-	void UniformMatrix(const Mat4 &matrix) {
-		glUniformMatrix4fv(mvp_handler, 1, GL_FALSE, matrix.data);
+	void UniformMatrix(const GLfloat *data) {
+		glUniformMatrix4fv(mvp_handler, 1, GL_FALSE, data);
+	}
+	void FillUniform4fv(const char *univar, const GLfloat *data) {
+		GetUniformLocation(univar);
+		UniformMatrix(data);
 	}
 };
 

@@ -63,12 +63,6 @@ using namespace std;
 
 const float WT = 1366./2;
 const float HT = 768./2;
-
-float stepY = 0.5;
-float stepX = 0.5;
-float angleZ = 0.;
-float angleX = 0.;
-
 float speed = 0.15;
 float rotateSpeed = 1.15;
 
@@ -77,21 +71,20 @@ char linesShaderName[] = "../shaders/LinesVertices.hlsl";
 
 GLuint *vertexArrays;
 GLuint *buffer;
-Program lsProgram;
+Program gridProgram;
 
 Mat4 MVP;
-Mat4 model;
+Mat4 model = Mat4::ident();
 Mat4 view;
 Mat4 projection;
-Mat4 ortho;
 
 Camera camera;
-//8, 2
-const int h_lines = 100, v_lines = 100;
-const float areaR = 200.;
-float lines[h_lines*2*3 + v_lines*2*3];
 
 namespace cl {
+	const int h_lines = 100, v_lines = 100;
+	const float areaR = 200.;
+	float lines[h_lines*2*3 + v_lines*2*3];
+
 	void SetLine(int st, floatv x1, floatv y1, floatv x2, floatv y2) {
 		int e = st + 3;
 		lines[st    ] = x1;
@@ -135,21 +128,71 @@ namespace cl {
 	}
 }
 
+struct CamInfo {
+	int a = 5;
+} info;
+
+bool isPressed[256];
+void handleKeys() {
+	if (isPressed[(int)'w']) {
+		camera.MoveForward(-speed);
+	}
+	if (isPressed[(int)'a']) {
+		camera.Rotate(camera.worldUp(), rotateSpeed);
+	}
+	if (isPressed[(int)'s']) {
+		camera.MoveForward(speed);
+	}
+	if (isPressed[(int)'d']) {
+		camera.Rotate(camera.worldUp(), -rotateSpeed);
+	}
+	if (isPressed[(int)'z']) {
+		camera.MoveUp(speed);
+	}
+	if (isPressed[(int)'x']) {
+		camera.MoveUp(-speed);
+	}
+	if (isPressed[(int)'q']) {
+		camera.MoveSideway(-speed);
+	}
+	if (isPressed[(int)'e']) {
+		camera.MoveSideway(speed);
+	}
+	if (isPressed[(int)'u']) {
+		camera.Rotate(camera.rightHand(), rotateSpeed);
+	}
+	if (isPressed[(int)'j']) {
+		camera.Rotate(camera.rightHand(), -rotateSpeed);
+	}
+	if (isPressed[(int)'p']) {
+		speed = (abs((int)(speed*100) + 15)%300)/100.;
+	}
+	if (isPressed[(int)'o']) {
+		speed = (abs((int)(speed*100) - 15)%300)/100.;
+	}
+	if (isPressed[(int)'l']) {
+		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%100)/100.;
+	}
+	if (isPressed[(int)'k']) {
+		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%100)/100.;
+	}
+}
+
 void Render() {
+	handleKeys();
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	lsProgram.Use();
+	gridProgram.Use();
 	view = camera.GetView();
-	cout << camera << view << endl;
-	cout << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
+	cout << camera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
 	MVP  = projection * view * model;
-	lsProgram.UniformMatrix(MVP.transposed());
+	gridProgram.UniformMatrix(MVP.transposed().data);
 	glBindVertexArray(vertexArrays[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
-	glBufferData(GL_ARRAY_BUFFER, (h_lines*2*3 + v_lines*2*3) * sizeof(float), lines, GL_STATIC_DRAW);
-	lsProgram.EnableVertexAttribArray();
-	lsProgram.VertexAttribPointer(3, GL_FLOAT, GL_FALSE, 0, 0);
-	for(int i = 0; i < h_lines + v_lines; i++)
+	glBufferData(GL_ARRAY_BUFFER, (cl::h_lines*2*3 + cl::v_lines*2*3) * sizeof(float), cl::lines, GL_STATIC_DRAW);
+	gridProgram.EnableVertexAttribArray();
+	gridProgram.VertexAttribPointer(3, GL_FLOAT, GL_FALSE, 0, 0);
+	for(int i = 0; i < cl::h_lines + cl::v_lines; i++)
 		glDrawArrays(GL_LINES, i*2, 3);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -158,53 +201,18 @@ void Render() {
 }
 
 void handleKey(unsigned char key, int x, int y) {
-	if (key == 'w') {
-		camera.MoveForward(speed);
-	}
-	if (key == 'a') {
-		camera.Rotate(camera.head, -rotateSpeed);
-	}
-	if (key == 's') {
-		camera.MoveForward(-speed);
-	}
-	if (key == 'd') {
-		camera.Rotate(camera.head, rotateSpeed);
-	}
-	if (key == 'z') {
-		camera.MoveUp(speed);
-	}
-	if (key == 'x') {
-		camera.MoveUp(-speed);
-	}
-	if (key == 'q') {
-		camera.MoveSideway(speed);
-	}
-	if (key == 'e') {
-		camera.MoveSideway(-speed);
-	}
-	if (key == 'u') {
-		camera.Rotate(camera.rightHand(), rotateSpeed);
-	}
-	if (key == 'j') {
-		camera.Rotate(camera.rightHand(), -rotateSpeed);
-	}
-	if (key == 'p') {
-		speed = (abs((int)(speed*100) + 15)%300)/100.;
-	}
-	if (key == 'l') {
-		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%100)/100.;
-	}
-
+	isPressed[(int)key] = true;
 	Render();
 }
 
-int prevx, prevy;
-void handleMouse(int x, int y) {
-
+void handleUpKey(unsigned char key, int x, int y) {
+	isPressed[(int)key] = false;
+	Render();
 }
 
-float mtr(int i, int j, int h, int w) {
-	return fabs(i + j*2);
+void handleMouse(int x, int y) {
+	static int prevx, prevy;
+	//(cout << x << ' ' << y << endl).flush();
 }
 
 int main(int argc, char** argv) {
@@ -216,50 +224,44 @@ int main(int argc, char** argv) {
 	glutCreateWindow(CAPTION);
 	glutDisplayFunc(Render);
 	glutKeyboardFunc(handleKey);
-	glutMotionFunc(handleMouse);
+	glutKeyboardUpFunc(handleUpKey);
+	glutSetKeyRepeat(GLUT_KEY_REPEAT_ON);
+	glutPassiveMotionFunc(handleMouse);
 	glEnable(GL_DEPTH_TEST);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
 		return 1;
 
-	lsProgram = Program(
+	gridProgram = Program(
 		Shader(linesShaderName, GL_VERTEX_SHADER),
 		Shader(fragmentShaderName, GL_FRAGMENT_SHADER));
 
 	cl::CreateLines();
 	camera = Camera(
 			/*position*/Vec4(4, 0., 0., 0.),
-			/*target*/Vec4(4, 4., 0., 4.),
-			/*head*/Vec4(4, 0., 1., 0.));
+			/*target*/  Vec4(4, 4., 0., 4.),
+			/*up*/      Vec4(4, 0., 1., 0.));
 
-	view       = camera.GetView();
-	projection = camera.projectionMatrix(45., WT/HT, 0.1, 100.);
-	model      = Mat4::ident().translated(Vec4(4, 0., .0, 4.));
-	ortho = camera.ortho(0., WT, 0., HT, 0.1, 200.);
-
-	MVP = projection * view * model;
+	projection = camera.projectionMatrix(45., WT/HT, 0.1, 400.);
 
 	vertexArrays = new GLuint[1];
 	glGenVertexArrays(1, vertexArrays);
 	buffer = new GLuint[1];
 	glGenBuffers(1, buffer);
-	lsProgram.Use();
-	lsProgram.GetAttribAllocation("vertexPosition");
-	lsProgram.EnableVertexAttribArray();
-	lsProgram.GetUniformLocation("trans");
-	lsProgram.UniformMatrix(MVP);
+	gridProgram.Use();
+	gridProgram.GetAttribAllocation("vertexPosition");
+	gridProgram.EnableVertexAttribArray();
+	gridProgram.FillUniform4fv("trans", MVP.data);
 
 
-//	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
-	glClearColor(3*.136, 3*.194, 3*.252, 0.5f);
+	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
+//	glClearColor(3*.136, 3*.194, 3*.252, 0.5f);
 
 	glutMainLoop();
 
 	return 0;
 }
-
-
 //::testing::InitGoogleTest(&argc, argv);
 	//return RUN_ALL_TESTS();
 //	Vec4 v = Vec4(2, 5.1, 6.6);

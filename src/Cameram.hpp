@@ -11,22 +11,28 @@ class Camera {
 public:
 	Vec4 position;
 	Vec4 target;
-	Vec4 head;
+	Vec4 up;
 	Vec4 forward;
 	Vec4 side;
 	Camera();
-	Camera(Vec4 p, Vec4 l, Vec4 u) : position(p), target(l), head(u) {};
+	Camera(Vec4 pos, Vec4 tar, Vec4 worldup) : position(pos), target(tar), up(worldup) {
+		position = pos;
+		target = tar;
+		up = worldup.normalized();
+		forward = (position - target).normalized();
+		side = (up.cross3(forward)).normalized();
+	};
 	Vec4 dir() {
-		return (position - target).normalized();
+		return forward.normalized();
 	};
 	Vec4 worldUp() {
 		return Vec4(4, 0., 1., 0.);
 	};
 	Vec4 rightHand() {
-		return (head.cross3(dir())).normalized();
+		return side.normalized();
 	}
 	Vec4 camUp() {
-		return (head/*dir().cross3(rightHand())*/).normalized();
+		return up.normalized();
 	}
 	void MoveForward(const float speed);
 	void MoveSideway(const float speed);

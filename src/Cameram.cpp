@@ -5,13 +5,13 @@ Camera::Camera() {
 }
 
 void Camera::MoveForward(const float speed) {
-	Vec4 direction = Vec4(4, 0., 0., -1.);//dir();
+	Vec4 direction = forward;//Vec4(4, 0., 0., -1.);//dir();
 	this->position += direction * speed;
 	this->target   += direction * speed;
 }
 
 void Camera::MoveSideway(const float speed) {
-	Vec4 direction = Vec4(4, -1., 0., 0.);//(camUp().cross3(dir())).normalized();
+	Vec4 direction = side;//Vec4(4, -1., 0., 0.);//(camUp().cross3(dir())).normalized();
 	this->position += direction * speed;
 	this->target   += direction * speed;
 }
@@ -33,17 +33,17 @@ void Camera::Rotate(const Vec4 &axis, const float angle) {
 		Vec4(4, z*x*(1 - cosx) - y*sinx, y*z*(1 - cosx) + x*sinx, cosx + z*z*(1 - cosx)),
 		Vec4(4, 0., 0., 0., 0.));
 
-	this->target = rotation*this->target;
-	this->position = rotation*this->position;
-	this->head = (rotation*this->head).normalized();
+	this->side = (rotation*this->side).normalized();
+	this->forward = (rotation*this->forward).normalized();
+	this->up = (rotation*this->up).normalized();
 }
 
 Mat4 Camera::GetView() {
 	Vec4
-			c = dir(),
-			a = (worldUp().cross3(c)).normalized(),
-			b = (c.cross3(a)).normalized();
-	if (false)
+			c = forward,//dir(),
+			a = side,//(worldUp().cross3(c)).normalized(),
+			b = up;//(c.cross3(a)).normalized();
+	if (true)
 	return
 			Mat4(a, b, c, Vec4(4, 0., 0., 0., 1.))*
 			Mat4(
