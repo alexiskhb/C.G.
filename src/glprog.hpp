@@ -45,6 +45,12 @@ public:
 		GetUniformLocation(univar);
 		UniformMatrix(data);
 	}
+	void AttachShader(const char *fileName, GLenum shaderType) {
+		glAttachShader(handler, Shader(fileName, shaderType).handler);
+	}
+	void Link() {
+		glLinkProgram(handler);
+	}
 };
 
 #endif /* GLPROG_HPP_ */

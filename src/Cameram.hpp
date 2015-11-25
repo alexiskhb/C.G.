@@ -39,10 +39,10 @@ public:
 	void MoveUp(const float speed);
 	void Rotate(const Vec4 &axis, const float angle);
 	Mat4 GetView();
-	Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
-	Mat4 projectionMatrix(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
-	Mat4 ortho(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
-	Mat4 ortho2(floatv fov, floatv aspect, floatv near, floatv far) {
+	static Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
+	static Mat4 projectionMatrix(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
+	static Mat4 ortho(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
+	static Mat4 ortho2(floatv fov, floatv aspect, floatv near, floatv far) {
 		floatv top = tan(fov/2.)*near, bottom = -top, right = top*aspect, left = -right;
 		return ortho(left, right, top, bottom, near, far);
 	}

@@ -44,7 +44,7 @@ public:
 	static Vec4   bycomp(Vec4 a, Vec4 b);
 	static floatv dot  (Vec4 a, Vec4 b);
 	inline floatv length()  {return sqrt(degreedElSum(2));};
-	void   normalize3();
+	void   normalize();
 	Vec4   normalized();
 	Vec4   cross3(Vec4 v) {return cross3(*this, v);};
 	floatv dot  (Vec4 v) {return   dot(*this, v);};

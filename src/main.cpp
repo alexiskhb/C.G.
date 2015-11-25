@@ -10,6 +10,8 @@
 #include "glprog.hpp"
 #include "Cameram.hpp"
 #include "lines.hpp"
+#include <ctime>
+#include <vector>
 
 /*
 mat translate(mat, vec) m = tmat*mat, tmat =
@@ -75,6 +77,7 @@ lookAt(vec pos, target, side)
  *  color
  *  dir
  *  zatuhanie
+ *  angle
  *
  *ambient
  *
@@ -100,12 +103,15 @@ Mat4 model = Mat4::ident();
 Mat4 view;
 Mat4 projection;
 
-Camera camera;
+vector<Camera> cameras;
+vector<Camera>::iterator currentCam;
+
+Camera *currentCamera;
 Program gridProgram;
 Program infoProgram;
 Program cubeProgram;
 Lines grid = Lines(h_lines + v_lines);
-Cube cube = Cube(24., Vec4(4, 0., 0., 0.));
+Cube cube = Cube(24., Vec4(4, 0., 12., 0.));
 
 namespace cg {
 	const float areaR = 200.;
@@ -137,34 +143,34 @@ struct CamInfo {
 bool isPressed[256];
 inline void handleKeys() {
 	if (isPressed['w']) {
-		camera.MoveForward(-speed);
+		currentCamera->MoveForward(-speed);
 	}
 	if (isPressed[(int)'a']) {
-		camera.Rotate(camera.worldUp(), rotateSpeed);
+		currentCamera->Rotate(currentCamera->worldUp(), rotateSpeed);
 	}
 	if (isPressed[(int)'s']) {
-		camera.MoveForward(speed);
+		currentCamera->MoveForward(speed);
 	}
 	if (isPressed[(int)'d']) {
-		camera.Rotate(camera.worldUp(), -rotateSpeed);
+		currentCamera->Rotate(currentCamera->worldUp(), -rotateSpeed);
 	}
 	if (isPressed[(int)'z']) {
-		camera.MoveUp(speed);
+		currentCamera->MoveUp(speed);
 	}
 	if (isPressed[(int)'x']) {
-		camera.MoveUp(-speed);
+		currentCamera->MoveUp(-speed);
 	}
 	if (isPressed[(int)'q']) {
-		camera.MoveSideway(-speed);
+		currentCamera->MoveSideway(-speed);
 	}
 	if (isPressed[(int)'e']) {
-		camera.MoveSideway(speed);
+		currentCamera->MoveSideway(speed);
 	}
 	if (isPressed[(int)'u']) {
-		camera.Rotate(camera.rightHand(), rotateSpeed);
+		currentCamera->Rotate(currentCamera->rightHand(), rotateSpeed);
 	}
 	if (isPressed[(int)'j']) {
-		camera.Rotate(camera.rightHand(), -rotateSpeed);
+		currentCamera->Rotate(currentCamera->rightHand(), -rotateSpeed);
 	}
 	if (isPressed[(int)'p']) {
 		speed = (abs((int)(speed*100) + 15)%1000)/100.;
@@ -179,6 +185,9 @@ inline void handleKeys() {
 		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%1000)/100.;
 	}
 	if (isPressed[(int)'m']) {
+		if (++currentCam == cameras.end())
+			currentCam = cameras.begin();
+		currentCamera = &(*currentCam);
 	}
 	if (isPressed[(int)'n']) {
 	}
@@ -191,8 +200,8 @@ inline void Render() {
 	gridProgram.Use();
 	gridProgram.FillUniform4fv("trans", MVP.data);
 	gridProgram.GetAttribAllocation("vertexPosition");
-	view = camera.GetView();
-	cout << camera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
+	view = currentCamera->GetView();
+	cout << currentCamera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data);
 	grid.Draw(gridProgram);
@@ -203,13 +212,12 @@ inline void Render() {
 	cubeProgram.UniformMatrix(MVP.transposed().data);
 	cube.Draw(cubeProgram);
 
-
 	infoProgram.Use();
 	infoProgram.GetAttribAllocation("vertexPosition");
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
 	infoProgram.FillUniform4fv("trans", MVP.data);
 	infoProgram.UniformMatrix(MVP.transposed().data);
-	info.Draw(camera, infoProgram);
+	info.Draw(*currentCamera, infoProgram);
 
 	glutSwapBuffers();
 }
@@ -229,17 +237,20 @@ void handleSpecKey(int key, int x, int y) {
 void handleUpSpecKey(int key, int x, int y) {
 }
 
-//bool isWrapped;
+int lastTime = 0;
+int warping = 0;
 inline void handleMouse(int x, int y) {
 	static int prevx, prevy;
-	//isWrapped = false;
 	int dx = prevx - x, dy = prevy - y;
-	camera.Rotate(camera.worldUp(), dx*rotateSpeed);
-	camera.Rotate(camera.rightHand(), dy*rotateSpeed);
+	currentCamera->Rotate(currentCamera->worldUp(), dx*rotateSpeed);
+	currentCamera->Rotate(currentCamera->rightHand(), dy*rotateSpeed);
 	prevx = x;
 	prevy = y;
 
-	//glutWarpPointer(WT/2, HT/2);
+//	if (time(NULL) - lastTime > 1) {
+//		lastTime = time(NULL);
+//		glutWarpPointer(WT/2, HT/2);
+//	}
 	glutPostRedisplay();
 }
 
@@ -267,7 +278,6 @@ int main(int argc, char** argv) {
 		Shader(gridVertexShaderName, GL_VERTEX_SHADER),
 		Shader(gridFragmentShaderName, GL_FRAGMENT_SHADER));
 
-
 	infoProgram = Program(
 		Shader(infoVertexShaderName, GL_VERTEX_SHADER),
 		Shader(infoFragmentShaderName, GL_FRAGMENT_SHADER));
@@ -277,13 +287,20 @@ int main(int argc, char** argv) {
 		Shader(cubeFragmentShaderName, GL_FRAGMENT_SHADER));
 
 	cg::CreateGrid();
-	camera = Camera(Vec4(4, 0., 1., 0.), Vec4(4, 4., 1., 4.), Vec4(4, 0., 1., 0.));
+
+	cameras.push_back(Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.)));
+	cameras.push_back(Camera(Vec4(4, -25., 10., -25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.)));
+
+	currentCamera = &(cameras.at(0));
+	currentCam = cameras.begin();
 
 	grid.Init();
-	projection = camera.projectionMatrix(45., WT/HT, 0.1, 400.);
+	projection = Camera::projectionMatrix(45., WT/HT, 0.1, 400.);
 
 //	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
-	glClearColor(3.5*.136, 3.5*.194, 3.5*.252, 0.5f);
+	float backg = 1.2;
+	glClearColor(backg*.136, backg*.194, backg*.252, 0.5f);
+//	glClearColor(backg*.244, backg*.122, backg*.0, 0.5f);
 
 	info.lines.Init();
 	info.lines.SetLine(info.ox, .3,  0.,  0., .7, 0., 0.);
@@ -292,6 +309,7 @@ int main(int argc, char** argv) {
 	info.lines.SetLine(info.htscale, -.5, -.7, 0., -.5, .7, 0.);
 	cube.Init();
 	glutMainLoop();
+
 
 	return 0;
 }

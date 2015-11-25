@@ -44,13 +44,13 @@ Vec4 Vec4::normalized() {
 	return result;
 }
 
-void Vec4::normalize3() {
+void Vec4::normalize() {
 	floatv normDivider = sqrt(degreedElSum(2));
 	if (!isValid() || fabs(normDivider) < epsilon) {
 		this->valid = isValid() ? VTDIVBYZERO : VTERR;
 		return;
 	}
-	for(int i = 0; i < this->width*this->height - 1; i++)
+	for(int i = 0; i < this->width*this->height; i++)
 		(*this)[i] = (*this)[i] / normDivider;
 }
 
