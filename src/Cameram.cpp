@@ -40,9 +40,9 @@ void Camera::Rotate(const Vec4 &axis, const float angle) {
 
 Mat4 Camera::GetView() {
 	Vec4
-			c = forward,//dir(),
-			a = side,//(worldUp().cross3(c)).normalized(),
-			b = up;//(c.cross3(a)).normalized();
+			c = forward,
+			a = side,
+			b = up;
 	if (true)
 	return
 			Mat4(a, b, c, Vec4(4, 0., 0., 0., 1.))*

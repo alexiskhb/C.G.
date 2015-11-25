@@ -5,7 +5,7 @@ using namespace std;
 Mat::Mat(int ht, int wt) {
 	height = ht;
 	width  = wt;
-	data   = new floatv[wt*ht];
+	//data   = new floatv[wt*ht];
 	datasize = wt*ht;
 	valid  = VTOK;
 }
@@ -23,7 +23,7 @@ Mat::Mat(int ht, int wt, floatv(*func)(int, int, int, int)) : Mat(ht, wt) {
 }
 
 Mat::~Mat() {
-	//delete [] this->data;
+//	delete [] this->data;
 }
 
 Mat Mat::operator+(floatv value) {
@@ -55,12 +55,15 @@ void Mat::transpose() {
 	if(height == 1 || width == 1) {
 	} else
 	if(height != width) {
-		floatv *newdata = new float[height*width];
+		//TODO transpose for H != W
+		//floatv *newdata = new float[height*width];
+		std::cout << "\n";
+		exit(1);
 		for(int i = 0; i < height; i++)
 			for(int j = 0; j < width; j++)
-				newdata[j*height + i] = this->data[i*width + j];
+				;//newdata[j*height + i] = this->data[i*width + j];
 		delete [] this->data;
-		this->data = newdata;
+		//this->data = newdata;
 	} else {
 		for(int i = 0; i < height; i++)
 			for(int j = i; j < width; j++)

@@ -44,7 +44,7 @@ public:
 	Mat operator*(const Mat &m);
 	Mat operator*(floatv value);
 ////
-	floatv *data;
+	floatv data[100];
 	int datasize;
 ////
 	void operatorAdd(Mat &result, floatv value);

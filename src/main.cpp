@@ -58,20 +58,42 @@ lookAt(vec pos, target, side)
  glutkeyboardfunc
 */
 
+/*
+ * specExp(yarkost' pyatna obyazatel'no vstroit' v material)
+ *
+ *directional
+ *  dir
+ *  color
+ *
+ *point
+ *  pos
+ *  color
+ *  attenuation(a, b, c) (1 / a+bd+cd^2)
+ *
+ *spot
+ *  pos
+ *  color
+ *  dir
+ *  zatuhanie
+ *
+ *ambient
+ *
+ * */
 #define CAPTION ("Shch")
 
 using namespace std;
 
 const float WT = 1366./2;
 const float HT = 768./2;
-float speed = 0.55;
-float rotateSpeed = 1.15;
+float speed = 1.;
+float rotateSpeed = 1.;
 const int h_lines = 100, v_lines = 100;
 
-char gridFragmentShaderName[] = "../shaders/gridFragmentShader.hlsl";
-char gridVertexShaderName[] = "../shaders/gridVertexShader.hlsl";
-char infoFragmentShaderName[] = "../shaders/infoFragmentShader.hlsl";
-char infoVertexShaderName[] = "../shaders/infoVertexShader.hlsl";
+char gridFragmentShaderName[] = "../shaders/gridFragmentShader.glsl";
+char gridVertexShaderName[] = "../shaders/gridVertexShader.glsl";
+char infoFragmentShaderName[] = "../shaders/infoFragmentShader.glsl";
+char infoVertexShaderName[] = "../shaders/infoVertexShader.glsl";
+char cubeFragmentShaderName[] = "../shaders/cubeFragmentShader.glsl";
 
 Mat4 MVP;
 Mat4 model = Mat4::ident();
@@ -81,11 +103,14 @@ Mat4 projection;
 Camera camera;
 Program gridProgram;
 Program infoProgram;
+Program cubeProgram;
 Lines grid = Lines(h_lines + v_lines);
+Cube cube = Cube(24., Vec4(4, 0., 0., 0.));
 
 namespace cg {
 	const float areaR = 200.;
 	void CreateGrid() {
+
 		for(int i = 0; i < h_lines; i += 2) {
 			grid.SetLine(    i, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
 			grid.SetLine((i+1), -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
@@ -98,10 +123,11 @@ namespace cg {
 }
 
 struct CamInfo {
-	Lines lines = Lines(7*2*3);
+	Lines lines = Lines(7);
 	const int ox = 0, oy = 1, oz = 2, dir = 3, pitch = 4, ht = 5, htscale = 6;
 	void Draw(Camera cam, Program prog) {
-		lines.SetLine(dir, 0.5, .0, 0., cam.forward[0] + 0.5, -cam.forward[2], 0.);
+		float a = cam.forward[0] + 0.5, b = cam.forward[2], x = sqrt(a*a + b*b);
+		lines.SetLine(dir, 0.5, .0, 0., a, -b, 0.);
 		lines.SetLine(pitch,  0., 0., 0., 0.5*cam.up.dot(cam.worldUp()), -cam.forward[1], 0.);
 		lines.SetLine(ht, -0.7, cam.position[1]/100, 0., -0.3, cam.position[1]/100, 0.);
 		lines.Draw(prog);
@@ -109,8 +135,8 @@ struct CamInfo {
 } info;
 
 bool isPressed[256];
-void handleKeys() {
-	if (isPressed[(int)'w']) {
+inline void handleKeys() {
+	if (isPressed['w']) {
 		camera.MoveForward(-speed);
 	}
 	if (isPressed[(int)'a']) {
@@ -152,9 +178,13 @@ void handleKeys() {
 	if (isPressed[(int)'k']) {
 		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%1000)/100.;
 	}
+	if (isPressed[(int)'m']) {
+	}
+	if (isPressed[(int)'n']) {
+	}
 }
 
-void Render() {
+inline void Render() {
 	handleKeys();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -166,6 +196,12 @@ void Render() {
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data);
 	grid.Draw(gridProgram);
+
+	cubeProgram.Use();
+	cubeProgram.GetAttribAllocation("vertexPosition");
+	cubeProgram.FillUniform4fv("trans", MVP.data);
+	cubeProgram.UniformMatrix(MVP.transposed().data);
+	cube.Draw(cubeProgram);
 
 
 	infoProgram.Use();
@@ -180,17 +216,31 @@ void Render() {
 
 void handleKey(unsigned char key, int x, int y) {
 	isPressed[(int)key] = true;
-	Render();
+	glutPostRedisplay();
 }
 
 void handleUpKey(unsigned char key, int x, int y) {
 	isPressed[(int)key] = false;
-	Render();
 }
 
-void handleMouse(int x, int y) {
+void handleSpecKey(int key, int x, int y) {
+}
+
+void handleUpSpecKey(int key, int x, int y) {
+}
+
+//bool isWrapped;
+inline void handleMouse(int x, int y) {
 	static int prevx, prevy;
-	//(cout << x << ' ' << y << endl).flush();
+	//isWrapped = false;
+	int dx = prevx - x, dy = prevy - y;
+	camera.Rotate(camera.worldUp(), dx*rotateSpeed);
+	camera.Rotate(camera.rightHand(), dy*rotateSpeed);
+	prevx = x;
+	prevy = y;
+
+	//glutWarpPointer(WT/2, HT/2);
+	glutPostRedisplay();
 }
 
 int main(int argc, char** argv) {
@@ -203,14 +253,16 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(Render);
 	glutKeyboardFunc(handleKey);
 	glutKeyboardUpFunc(handleUpKey);
+	glutSpecialFunc(handleSpecKey);
+	glutSpecialUpFunc(handleUpSpecKey);
 	glutSetKeyRepeat(GLUT_KEY_REPEAT_ON);
 	glutPassiveMotionFunc(handleMouse);
+	//glutSetCursor(GLUT_CURSOR_NONE);
 	glEnable(GL_DEPTH_TEST);
 	glewExperimental = GL_TRUE;
 	GLenum res = glewInit();
 	if (res != GLEW_OK)
 		return 1;
-
 	gridProgram = Program(
 		Shader(gridVertexShaderName, GL_VERTEX_SHADER),
 		Shader(gridFragmentShaderName, GL_FRAGMENT_SHADER));
@@ -220,24 +272,25 @@ int main(int argc, char** argv) {
 		Shader(infoVertexShaderName, GL_VERTEX_SHADER),
 		Shader(infoFragmentShaderName, GL_FRAGMENT_SHADER));
 
+	cubeProgram = Program(
+		Shader(gridVertexShaderName, GL_VERTEX_SHADER),
+		Shader(cubeFragmentShaderName, GL_FRAGMENT_SHADER));
 
 	cg::CreateGrid();
 	camera = Camera(Vec4(4, 0., 1., 0.), Vec4(4, 4., 1., 4.), Vec4(4, 0., 1., 0.));
 
-	glGenVertexArrays(1, &grid.vertexArray);
-	glGenBuffers(1, &grid.buffer);
+	grid.Init();
 	projection = camera.projectionMatrix(45., WT/HT, 0.1, 400.);
 
-	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
-//	glClearColor(3*.136, 3*.194, 3*.252, 0.5f);
+//	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
+	glClearColor(3.5*.136, 3.5*.194, 3.5*.252, 0.5f);
 
-	glGenVertexArrays(1, &info.lines.vertexArray);
-	glGenBuffers(1, &info.lines.buffer);
-	info.lines.SetLine(info.ox, -.0,  0.,  0., .0, 0., 0.);
-	info.lines.SetLine(info.oy, .5 , -.9,  0., .5, .9, 0.);
-	info.lines.SetLine(info.oz, 0. , -.9,  0., 0., .9, 0.);//there is no mistake.
-	info.lines.SetLine(info.htscale, -.5, -.9, 0., -.5, .9, 0.);
-
+	info.lines.Init();
+	info.lines.SetLine(info.ox, .3,  0.,  0., .7, 0., 0.);
+	info.lines.SetLine(info.oy, .5 , -.7,  0., .5, .7, 0.);
+	info.lines.SetLine(info.oz, 0. , -.7,  0., 0., .7, 0.);
+	info.lines.SetLine(info.htscale, -.5, -.7, 0., -.5, .7, 0.);
+	cube.Init();
 	glutMainLoop();
 
 	return 0;
