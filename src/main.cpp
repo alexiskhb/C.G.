@@ -111,7 +111,7 @@ Program gridProgram;
 Program infoProgram;
 Program cubeProgram;
 Lines grid = Lines(h_lines + v_lines);
-Cube cube = Cube(24., Vec4(4, 0., 12., 0.));
+Cube cube = Cube(24., Vec4(4, 170., 24., 170.));
 
 namespace cg {
 	const float areaR = 200.;
@@ -257,7 +257,7 @@ inline void handleMouse(int x, int y) {
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	glutInitWindowSize(WT, HT);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitContextVersion(3, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutCreateWindow(CAPTION);
