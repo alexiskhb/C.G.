@@ -12,7 +12,7 @@ public:
 	Vec4 position;
 	Vec4 target;
 	Vec4 up;
-	Vec4 forward;
+	Vec4 direction;
 	Vec4 side;
 	floatv zoom = 45.;
 	Camera();
@@ -20,11 +20,11 @@ public:
 		position = pos;
 		target = tar;
 		up = worldup.normalized();
-		forward = (position - target).normalized();
-		side = (up.cross3(forward)).normalized();
+		direction = (position - target).normalized();
+		side = (up.cross3(direction)).normalized();
 	};
 	Vec4 dir() {
-		return forward.normalized();
+		return direction.normalized();
 	};
 	Vec4 worldUp() {
 		return Vec4(4, 0., 1., 0.);

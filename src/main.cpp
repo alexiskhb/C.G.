@@ -12,6 +12,7 @@
 #include "lines.hpp"
 #include <ctime>
 #include <vector>
+#include "light.h"
 
 
 /*
@@ -146,9 +147,9 @@ struct CamInfo {
 	Lines lines = Lines(7);
 	const int ox = 0, oy = 1, oz = 2, dir = 3, pitch = 4, ht = 5, htscale = 6;
 	void Draw(Camera cam, Program prog) {
-		float a = cam.forward[0] + 0.5, b = cam.forward[2], x = sqrt(a*a + b*b);
+		float a = cam.direction[0] + 0.5, b = cam.direction[2], x = sqrt(a*a + b*b);
 		lines.SetLine(dir, 0.5, .0, 0., a, -b, 0.);
-		lines.SetLine(pitch,  0., 0., 0., 0.5*cam.up.dot(cam.worldUp()), -cam.forward[1], 0.);
+		lines.SetLine(pitch,  0., 0., 0., 0.5*cam.up.dot(cam.worldUp()), -cam.direction[1], 0.);
 		lines.SetLine(ht, -0.7, cam.position[1]/100, 0., -0.3, cam.position[1]/100, 0.);
 		lines.FillBuffer(&infobuf, infoProgram);
 		infobuf.Draw(infoProgram);
@@ -160,13 +161,13 @@ inline void handleKeys() {
 	if (isPressed['w']) {
 		currentCamera->MoveForward(-speed);
 	}
-	if (isPressed[(int)'a']) {
+	if (isPressed[(int)'q']) {
 		currentCamera->Rotate(currentCamera->worldUp(), rotateSpeed);
 	}
 	if (isPressed[(int)'s']) {
 		currentCamera->MoveForward(speed);
 	}
-	if (isPressed[(int)'d']) {
+	if (isPressed[(int)'e']) {
 		currentCamera->Rotate(currentCamera->worldUp(), -rotateSpeed);
 	}
 	if (isPressed[(int)'z']) {
@@ -175,10 +176,10 @@ inline void handleKeys() {
 	if (isPressed[(int)'x']) {
 		currentCamera->MoveUp(-speed);
 	}
-	if (isPressed[(int)'q']) {
+	if (isPressed[(int)'a']) {
 		currentCamera->MoveSideway(-speed);
 	}
-	if (isPressed[(int)'e']) {
+	if (isPressed[(int)'d']) {
 		currentCamera->MoveSideway(speed);
 	}
 	if (isPressed[(int)'u']) {
