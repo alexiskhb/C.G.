@@ -22,7 +22,7 @@ void Lines::SetLine(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y
 	vertex[e  + 1] = y2;
 }
 
-void Triangles::SetTriangle(int v1, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2, floatv x3, floatv y3, floatv z3) {
+void Cube::SetTriangle(int v1, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2, floatv x3, floatv y3, floatv z3) {
 	v1 *= 9;
 	int v2 = v1 + 3, v3 = v2 + 3;
 	vertex[v1    ] = x1;
@@ -38,13 +38,27 @@ void Triangles::SetTriangle(int v1, floatv x1, floatv y1, floatv z1, floatv x2, 
 	vertex[v3 + 2] = z3;
 }
 
-void Lines::Draw(Program prog) {
-	glBindVertexArray(vertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+void Lines::FillBuffer(Buffer *buff, Program prog) {
+	glBindBuffer(GL_ARRAY_BUFFER, buff->vbo);
 	glBufferData(GL_ARRAY_BUFFER, (vamt*3) * sizeof(float), vertex, GL_STATIC_DRAW);
-	prog.EnableVertexAttribArray();
-	prog.VertexAttribPointer(3, GL_FLOAT, GL_FALSE, 0, 0);
-	glDrawArrays(mode, 0, vamt*3);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(buff->vao);
+	buff->first = 0;
+	buff->count = vamt*3;
+	buff->mode = mode;
+	glVertexAttribPointer(glGetAttribLocation(prog.handler, "vertexPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "vertexPosition"));
+}
+
+void Cube::FillBuffer(Buffer *buff, Program prog) {
+	glBindBuffer(GL_ARRAY_BUFFER, buff->vbo);
+	glBufferData(GL_ARRAY_BUFFER, (vamt*3) * sizeof(float), vertex, GL_STATIC_DRAW);
+	glBindVertexArray(buff->vao);
+	buff->first = 0;
+	buff->count = vamt*3;
+	buff->mode = mode;
+	glVertexAttribPointer(glGetAttribLocation(prog.handler, "vertexPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "vertexPosition"));
+	glVertexAttribPointer(glGetAttribLocation(prog.handler, "norm"), 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(36*3*sizeof(float)));
+	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "norm"));
 	glBindVertexArray(0);
 }

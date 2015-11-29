@@ -38,13 +38,11 @@ Shader::Shader(const char *fileName, GLenum aShaderType) {
 Program::Program() {
 	handler = 0;
 	attribArray = 0;
-	mvp_handler = 0;
 };
 
 Program::Program(const Shader &shader1, const Shader &shader2) {
 	handler = glCreateProgram();
 	attribArray = 0;
-	mvp_handler = 0;
 	glAttachShader(handler, shader1.handler);
 	glAttachShader(handler, shader2.handler);
 	GLint isLinkSuccesful;

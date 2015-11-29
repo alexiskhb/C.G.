@@ -8,6 +8,7 @@
 #include "light.h"
 
 Light::Light() {
+	intense = 0.;
 	// TODO Auto-generated constructor stub
 
 }

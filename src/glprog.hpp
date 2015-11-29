@@ -9,6 +9,8 @@
 #include "mat4.hpp"
 #include "mat.hpp"
 #include "vec4.hpp"
+#include <map>
+#include <string>
 
 class Shader {
 public:
@@ -20,11 +22,18 @@ class Program {
 public:
 	GLuint handler;
 	GLint  attribArray;
-	GLuint mvp_handler;
+	std::map<std::string, int> attribs;
 	Program();
 	Program(const Shader &shader1, const Shader &shader2);
 	void GetAttribAllocation(const char *var) {
 		glGetAttribLocation(handler, var);
+	}
+	int Location(std::string var, bool is_uniform) {
+		if (is_uniform) {
+			return glGetUniformLocation(handler, var.c_str());
+		} else {
+			return glGetAttribLocation(handler, var.c_str());
+		}
 	}
 	void EnableVertexAttribArray() {
 		glEnableVertexAttribArray(attribArray);
@@ -35,21 +44,38 @@ public:
 	void VertexAttribPointer(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer) {
 		glVertexAttribPointer(attribArray, size, type, normalized, stride, pointer);
 	}
-	void GetUniformLocation(const char *univar) {
-		mvp_handler = glGetUniformLocation(handler, univar);
+	void UniformMatrix(const GLfloat *data, GLuint matrix_handler) {
+		glUniformMatrix4fv(matrix_handler, 1, GL_FALSE, data);
 	}
-	void UniformMatrix(const GLfloat *data) {
-		glUniformMatrix4fv(mvp_handler, 1, GL_FALSE, data);
-	}
-	void FillUniform4fv(const char *univar, const GLfloat *data) {
-		GetUniformLocation(univar);
-		UniformMatrix(data);
+	void UniformInt(const GLint data, GLuint int_handler) {
+		glUniform1i(int_handler, data);
 	}
 	void AttachShader(const char *fileName, GLenum shaderType) {
 		glAttachShader(handler, Shader(fileName, shaderType).handler);
 	}
 	void Link() {
 		glLinkProgram(handler);
+	}
+};
+
+class Buffer {
+public:
+	GLuint vbo;
+	GLuint vao;
+	GLint first;
+	GLint count;
+	GLenum mode;
+	Buffer() {
+		first = count = mode = vao = vbo = 0;
+	}
+	void Init() {
+		glGenVertexArrays(1, &vao);
+		glGenBuffers(1, &vbo);
+	}
+	void Draw(Program prog) {
+		glBindVertexArray(vao);
+		glDrawArrays(mode, first, count);
+		glBindVertexArray(0);
 	}
 };
 

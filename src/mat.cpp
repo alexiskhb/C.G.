@@ -12,7 +12,6 @@ Mat::Mat(int ht, int wt) {
 
 bool Mat::operator==(const Mat &a) {
 	bool result = a.height == height && a.width == width;
-
 	return result;
 }
 

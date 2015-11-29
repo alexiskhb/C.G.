@@ -14,6 +14,7 @@ public:
 	Vec4 up;
 	Vec4 forward;
 	Vec4 side;
+	floatv zoom = 45.;
 	Camera();
 	Camera(Vec4 pos, Vec4 tar, Vec4 worldup) : position(pos), target(tar), up(worldup) {
 		position = pos;
@@ -39,7 +40,7 @@ public:
 	void MoveUp(const float speed);
 	void Rotate(const Vec4 &axis, const float angle);
 	Mat4 GetView();
-	static Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
+	Mat4 projectionMatrix(floatv fov, floatv aspect, floatv near, floatv far);
 	static Mat4 projectionMatrix(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
 	static Mat4 ortho(floatv left, floatv right, floatv top, floatv bottom, floatv near, floatv far);
 	static Mat4 ortho2(floatv fov, floatv aspect, floatv near, floatv far) {

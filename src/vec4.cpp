@@ -35,7 +35,6 @@ Vec4 Vec4::normalized() {
 	Vec4 result = Vec4(4);
 	floatv normDivider = sqrt(degreedElSum(2));
 	if (!isValid() || fabs(normDivider) < epsilon) {
-		std::cout << "ASFASFASFAS\nSGSDGSDGS\nFSGSFGFGS\n";
 		result.valid = isValid() ? VTDIVBYZERO : VTERR;
 		return result;
 	}
@@ -47,7 +46,7 @@ Vec4 Vec4::normalized() {
 void Vec4::normalize() {
 	floatv normDivider = sqrt(degreedElSum(2));
 	if (!isValid() || fabs(normDivider) < epsilon) {
-		this->valid = isValid() ? VTDIVBYZERO : VTERR;
+		this->valid = isValid() ? VTOK : VTERR;
 		return;
 	}
 	for(int i = 0; i < this->width*this->height; i++)

@@ -5,11 +5,10 @@
 
 class Light {
 public:
-	Light();
 	Camera state;
-	Vec4 color;
-	float intense;
-
+	Vec4   color;
+	float  intense;
+	Light();
 	virtual ~Light();
 };
 
