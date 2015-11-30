@@ -224,7 +224,7 @@ inline void Render() {
 	for(int i = 0; i < lights.size(); i++)
 		lights.at(i).Uniform(i, cubeProgram);
 	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
-	cubeProgram.UniformMatrix((view*model).data, gridProgram.Location("model", 1));
+	cubeProgram.UniformMatrix((model).data, cubeProgram.Location("model", 1));
 	cube.FillBuffer(&cubebuf, cubeProgram);
 	cubebuf.Draw(cubeProgram);
 	bigCube.FillBuffer(&cubebuf, cubeProgram);

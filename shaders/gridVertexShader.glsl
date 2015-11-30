@@ -9,6 +9,6 @@ out vec3 normal;
 
 void main() {
 	normal = normalize(norm);
-	fragPos = vec3(/*model*/vec4(vertexPosition, 1.0));
+	fragPos = vec3(model*vec4(vertexPosition, 1.0));
     gl_Position = trans*vec4(vertexPosition, 1.0);
 }
