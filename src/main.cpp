@@ -103,7 +103,7 @@ const float HT = 768./2;
 const float visibility = 1000.;
 float speed = 1.;
 float rotateSpeed = 1.;
-const int h_lines = 100, v_lines = 100;
+const int h_lines = 26, v_lines = 26;
 
 char gridFragmentShaderName[] = "../shaders/gridFragmentShader.glsl";
 char gridVertexShaderName[] = "../shaders/gridVertexShader.glsl";
@@ -124,7 +124,7 @@ Program gridProgram;
 Program infoProgram;
 Program cubeProgram;
 Lines grid = Lines(h_lines + v_lines);
-Cube cube = Cube(24., Vec4(4, 170., 24., 170.));
+Cube cube = Cube(24., Vec4(4, 170., 24., 170.)), bigCube = Cube(480., Vec4(4, 0., -240)), bigBigCube(9600., Vec4(4, 0., -5300));
 Buffer gridbuf, cubebuf, infobuf;
 vector<Light> lights;
 
@@ -219,10 +219,17 @@ inline void Render() {
 	gridbuf.Draw(gridProgram);
 
 	cubeProgram.Use();
-
+	cubeProgram.UniformInt(lights.size(), cubeProgram.Location("lightamt", 1));
+	cubeProgram.UniformVec(currentCamera->position, cubeProgram.Location("eye", 1));
+	for(int i = 0; i < lights.size(); i++)
+		lights.at(i).Uniform(i, cubeProgram);
 	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
-	cubeProgram.UniformMatrix(model.transposed().data, gridProgram.Location("model", 1));
+	cubeProgram.UniformMatrix((view*model).data, gridProgram.Location("model", 1));
+	cube.FillBuffer(&cubebuf, cubeProgram);
 	cubebuf.Draw(cubeProgram);
+	bigCube.FillBuffer(&cubebuf, cubeProgram);
+	cubebuf.Draw(cubeProgram);
+
 
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
@@ -251,9 +258,6 @@ void handleSpecKey(int key, int x, int y) {
 
 void handleUpSpecKey(int key, int x, int y) {
 }
-
-int lastTime = 0;
-int warping = 0;
 
 inline void handleMouse(int x, int y) {
 	static int cx = WT/2, cy = HT/2;
@@ -313,13 +317,15 @@ int main(int argc, char** argv) {
 	cg::CreateGrid();
 
 	Camera
-			Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.)),
-			Cam2 = Camera(Vec4(4, 0., 10., -25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
+			Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
 
 	Vec4 vector = Vec4(4, 1.);
 
+	lights.push_back(Light(POINT, Vec4(4, 0., 10., 0.), Vec4(4, 1., 1., 1.), 0.));
+	//lights.push_back(Light(DIR, Vec4(4, 50., 36., -60.), Vec4(4, 1., 1., 1), 0.));
+
 	cameras.push_back(&Cam1);
-	cameras.push_back(&Cam2);
+	cameras.push_back(&(lights.at(0).state));
 
 	currentCam = cameras.begin();
 	currentCamera = *currentCam;
@@ -327,10 +333,8 @@ int main(int argc, char** argv) {
 	gridbuf.Init();
 	cubebuf.Init();
 	infobuf.Init();
-//	glClearColor(0.24f, 0.05f, 0.18f, 0.5f);
-	float backg = 1.1;
+	float backg = 0.6;
 	glClearColor(backg*.136, backg*.204, backg*.252, 0.5f);
-//	glClearColor(backg*.244, backg*.122, backg*.0, 0.5f);
 	projection = currentCamera->projectionMatrix(45., WT/HT, 0.1, visibility);
 
 	info.lines.SetLine(info.ox, .3,  0.,  0., .7, 0., 0.);

@@ -51,7 +51,7 @@ void Lines::FillBuffer(Buffer *buff, Program prog) {
 
 void Cube::FillBuffer(Buffer *buff, Program prog) {
 	glBindBuffer(GL_ARRAY_BUFFER, buff->vbo);
-	glBufferData(GL_ARRAY_BUFFER, (vamt*3) * sizeof(float), vertex, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 2*(36*3) * sizeof(float), vertex, GL_STATIC_DRAW);
 	glBindVertexArray(buff->vao);
 	buff->first = 0;
 	buff->count = vamt*3;

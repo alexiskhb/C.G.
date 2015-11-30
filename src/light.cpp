@@ -8,12 +8,10 @@
 #include "light.h"
 
 Light::Light() {
-	intense = 0.;
+	intense = spotAngle = 0;
+	type = NONE;
 	// TODO Auto-generated constructor stub
 
 }
 
-Light::~Light() {
-	// TODO Auto-generated destructor stub
-}
 

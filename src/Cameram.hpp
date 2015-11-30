@@ -16,10 +16,7 @@ public:
 	Vec4 side;
 	floatv zoom = 45.;
 	Camera();
-	Camera(Vec4 pos, Vec4 tar, Vec4 worldup) : position(pos), target(tar), up(worldup) {
-		position = pos;
-		target = tar;
-		up = worldup.normalized();
+	Camera(Vec4 pos, Vec4 tar, Vec4 worldup) : position(pos), target(tar), up(worldup.normalized()) {
 		direction = (position - target).normalized();
 		side = (up.cross3(direction)).normalized();
 	};

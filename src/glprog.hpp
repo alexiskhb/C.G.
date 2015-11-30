@@ -50,6 +50,9 @@ public:
 	void UniformInt(const GLint data, GLuint int_handler) {
 		glUniform1i(int_handler, data);
 	}
+	void UniformVec(Vec4 pos, GLuint vec_handler) {
+		glUniform3f(vec_handler, pos[0], pos[1], pos[2]);
+	}
 	void AttachShader(const char *fileName, GLenum shaderType) {
 		glAttachShader(handler, Shader(fileName, shaderType).handler);
 	}
