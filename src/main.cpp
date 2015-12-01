@@ -111,13 +111,15 @@ char infoFragmentShaderName[] = "../shaders/infoFragmentShader.glsl";
 char infoVertexShaderName[] = "../shaders/infoVertexShader.glsl";
 char cubeFragmentShaderName[] = "../shaders/cubeFragmentShader.glsl";
 
+char lightType[][20] = {"", "DIR", "SPOT", "POINT"};
+
 Mat4 MVP;
 Mat4 model = Mat4::ident();
 Mat4 view;
 Mat4 projection;
 
 vector<Camera*> cameras;
-vector<Camera*>::iterator currentCam;
+//vector<Camera*>::iterator currentCam;
 vector<Light>::iterator currentLight;
 
 Camera *currentCamera;
@@ -147,8 +149,8 @@ namespace cg {
 
 namespace lts {
 	void SetCamera() {
-		currentCam = cameras.begin() + (lights.size() > 0 ? std::distance(lights.begin(), currentLight) + 1 : 0);
-		currentCamera = *currentCam;
+		if (lights.size() < 1) return;
+		currentCamera = &((*currentLight).state);
 	}
 	void DeleteCurrentLight() {
 		if (lights.size() < 1) return;
@@ -160,7 +162,7 @@ namespace lts {
 	}
 	void DecreaseBrightness() {
 		if (lights.size() < 1) return;
-		(*currentLight).intense = fabs((*currentLight).intense - (*currentLight).intense > 0 ? 0.2 : 0);
+		(*currentLight).intense -= (*currentLight).intense - 0.2 > 0 ? 0.2 : 0;
 	}
 }
 
@@ -224,7 +226,7 @@ inline void handleKeys() {
 	if (isPressed[(int)'t']) {
 		rotateSpeed = (abs((int)(rotateSpeed*100) + 1)%1000)/100.;
 	}
-	if (isPressed[(int)'g']) {
+	if (isPressed[(int)'y']) {
 		rotateSpeed = (abs((int)(rotateSpeed*100) - 1)%1000)/100.;
 	}
 	if (isPressed[(int)'c']) {
@@ -240,7 +242,6 @@ inline void Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gridProgram.Use();
 	view = currentCamera->GetView();
-	cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n" << endl;
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data, gridProgram.Location("trans", 1));
 	gridbuf.Draw(gridProgram);
@@ -270,17 +271,18 @@ void handleKey(unsigned char key, int x, int y) {
 	if (key == '.') {
 		if (lights.size() > 0 && ++currentLight == lights.end())
 			currentLight = lights.begin();
-//		projection = currentCamera->projectionMatrix(currentCamera->zoom, WT/HT, 0.1, visibility);
 	}
 	if (key == ',') {
 		if (lights.size() > 0 && currentLight-- == lights.begin())
 			currentLight = lights.end() - 1;
-//		projection = currentCamera->projectionMatrix(currentCamera->zoom, WT/HT, 0.1, visibility);
-	}
-	if (key == 'l') {
-
 	}
 	using namespace lts;
+	if (key == 'l') {
+		SetCamera();
+	}
+	if (key == 'k') {
+		currentCamera = &Cam1;
+	}
 	if (key == '0') {
 		DeleteCurrentLight();
 	}
@@ -289,6 +291,24 @@ void handleKey(unsigned char key, int x, int y) {
 	}
 	if (key == '-') {
 		DecreaseBrightness();
+	}
+	if (key == 'g') {
+		(*currentLight).color += Vec4(4, 0.05);
+	}
+	if (key == 'h') {
+		(*currentLight).color += Vec4(4, 0, 0.05);
+	}
+	if (key == 'j') {
+		(*currentLight).color += Vec4(4, 0, 0, 0.05);
+	}
+	if (key == 'b') {
+		(*currentLight).color -= Vec4(4, 0.05);
+	}
+	if (key == 'n') {
+		(*currentLight).color -= Vec4(4, 0, 0.05);
+	}
+	if (key == 'm') {
+		(*currentLight).color -= Vec4(4, 0, 0, 0.05);
 	}
 	if (key == '0' + DIR) {
 		lights.push_back(Light(currentCamera->direction, Vec4(4, 1., 1. ,1.), 1.));
@@ -326,7 +346,14 @@ inline void handleMouse(int x, int y) {
 }
 
 void timer(int value) {
+	static Light clight;
 	handleKeys();
+	cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad" << endl;
+	if (lights.size() > 0) {
+		clight = *currentLight;
+		cout << "\ncurrent light: " << std::distance(lights.begin(), currentLight) << "_" << lightType[clight.type] << endl;
+		cout << "brightness = " << clight.intense << "\ncolor = " << clight.color.transposed() << "\n\n";
+	}
 	glutPostRedisplay();
 	glutTimerFunc(30, timer, 0);
 }
@@ -372,8 +399,7 @@ int main(int argc, char** argv) {
 	cg::CreateGrid();
 
 	cameras.push_back(&Cam1);
-	currentCam = cameras.begin();
-	currentCamera = *currentCam;
+	currentCamera = &Cam1;
 
 	gridbuf.Init();
 	cubebuf.Init();

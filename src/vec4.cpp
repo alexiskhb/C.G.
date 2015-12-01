@@ -31,6 +31,12 @@ Mat4 Vec4::operator*(const Vec4 &v) {
 	return result;
 }
 
+Vec4 Vec4::transposed() {
+	Vec4 result = Vec4(*this);
+	result.transpose();
+	return result;
+}
+
 Vec4 Vec4::normalized() {
 	Vec4 result = Vec4(4);
 	floatv normDivider = sqrt(degreedElSum(2));

@@ -46,6 +46,7 @@ public:
 	inline floatv length()  {return sqrt(degreedElSum(2));};
 	void   normalize();
 	Vec4   normalized();
+	Vec4   transposed();
 	Vec4   cross3(Vec4 v) {return cross3(*this, v);};
 	floatv dot  (Vec4 v) {return   dot(*this, v);};
 };
