@@ -30,17 +30,24 @@ public:
 		std::stringstream s; s << i;
 		Vec4 pos = state.position;
 		Vec4 dir = state.direction;
-		glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].color").c_str()), color[0], color[1], color[2]);
-		glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].pos").c_str()), pos[0], pos[1], pos[2]);
-		glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].dir").c_str()), dir[0], dir[1], dir[2]);
-		glUniform1i(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].type").c_str()), type);
-		glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].spotAngle").c_str()), spotAngle);
-		glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].intense").c_str()), intense);
+		if (disabled)
+			glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].disabled").c_str()), disabled);
+		else {
+			glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].color").c_str()), color[0], color[1], color[2]);
+			glUniform1i(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].type").c_str()), type);
+			glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].intense").c_str()), intense);
+			if (type != DIR)
+				glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].pos").c_str()), pos[0], pos[1], pos[2]);
+			if (type != POINT)
+				glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].dir").c_str()), dir[0], dir[1], dir[2]);
+			if (type == SPOT)
+				glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].spotAngle").c_str()), spotAngle);
+		}
 	}
 	light_t type;
 	Camera state;
 	Vec4   color;
-	int enabled = 1;
+	int disabled = 0;
 	float  intense;
 	float spotAngle;
 	Light();

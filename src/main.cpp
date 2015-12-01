@@ -160,7 +160,7 @@ namespace lts {
 	}
 	void DecreaseBrightness() {
 		if (lights.size() < 1) return;
-		(*currentLight).intense -= (*currentLight).intense > 0 ? 0.2 : 0;
+		(*currentLight).intense = fabs((*currentLight).intense - (*currentLight).intense > 0 ? 0.2 : 0);
 	}
 }
 
@@ -240,7 +240,7 @@ inline void Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gridProgram.Use();
 	view = currentCamera->GetView();
-	//cout << *currentCamera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
+	cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n" << endl;
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data, gridProgram.Location("trans", 1));
 	gridbuf.Draw(gridProgram);
@@ -291,15 +291,15 @@ void handleKey(unsigned char key, int x, int y) {
 		DecreaseBrightness();
 	}
 	if (key == '0' + DIR) {
-		lights.push_back(Light(currentCamera->direction, currentCamera->direction, 1.));
+		lights.push_back(Light(currentCamera->direction, Vec4(4, 1., 1. ,1.), 1.));
 		currentLight = lights.end() - 1;
 	}
 	if (key == '0' + POINT) {
-		lights.push_back(Light(*currentCamera, currentCamera->direction, 1.));
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 20.));
 		currentLight = lights.end() - 1;
 	}
 	if (key == '0' + SPOT) {
-		lights.push_back(Light(*currentCamera, currentCamera->direction, 1., 10.));
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 20., 10.));
 		currentLight = lights.end() - 1;
 	}
 
