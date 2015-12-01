@@ -155,6 +155,8 @@ namespace lts {
 	void DeleteCurrentLight() {
 		if (lights.size() < 1) return;
 		currentLight = lights.erase(currentLight);
+		if (currentLight == lights.end())
+			currentLight = lights.begin();
 	}
 	void IncreaseBrightness() {
 		if (lights.size() < 1) return;
@@ -311,11 +313,11 @@ void handleKey(unsigned char key, int x, int y) {
 		(*currentLight).color -= Vec4(4, 0, 0, 0.05);
 	}
 	if (key == '0' + DIR) {
-		lights.push_back(Light(currentCamera->direction, Vec4(4, 1., 1. ,1.), 1.));
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 1.05, DIR));
 		currentLight = lights.end() - 1;
 	}
 	if (key == '0' + POINT) {
-		lights.push_back(Light(*currentCamera, currentCamera->direction, 20.));
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 20., POINT));
 		currentLight = lights.end() - 1;
 	}
 	if (key == '0' + SPOT) {
@@ -355,7 +357,7 @@ void timer(int value) {
 		cout << "brightness = " << clight.intense << "\ncolor = " << clight.color.transposed() << "\n\n";
 	}
 	glutPostRedisplay();
-	glutTimerFunc(30, timer, 0);
+	glutTimerFunc(40, timer, 0);
 }
 
 void mouseWheel(int button, int dir, int x, int y) {
@@ -413,7 +415,7 @@ int main(int argc, char** argv) {
 	grid.FillBuffer(&gridbuf, gridProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
 
-	glutTimerFunc(30, timer, 0);
+	glutTimerFunc(40, timer, 0);
 	glutMainLoop();
 	return 0;
 }

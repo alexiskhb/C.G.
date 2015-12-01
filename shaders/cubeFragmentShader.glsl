@@ -71,7 +71,7 @@ void main(void)
 	M.diffuse = I * 0.4;
 	M.ambient = I * 0.4;
 	M.specular = I * 0.2;
-	M.shine = 32.0;
+	M.shine = 8.0;
 	
 	for(int i = 0; i < lightamt; i++) {
 		if (lights[i].disabled != 0)

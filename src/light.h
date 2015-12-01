@@ -15,16 +15,12 @@ typedef enum {
 
 class Light {
 public:
-	Light(Vec4 _direction, Vec4 _color, float _intense) : type(DIR), color(_color), intense(_intense), spotAngle(-1){
-		state = Camera(Vec4(4, 1.), Vec4(4), Vec4(4, 0., 1., 0.));
-		state.direction = _direction;
-	}
 	Light(const Camera &cam, Vec4 _color, float _intense, float _spotAngle) : type(SPOT), color(_color), intense(_intense), spotAngle(cos(_spotAngle)){
 		Vec4 t = cam.position;
-		t += cam.direction;
+		t -= cam.direction;
 		state = Camera(cam.position, t, Vec4(4, 0., 1., 0.));
 	}
-	Light(const Camera &cam, Vec4 _color, float _intense) : type(POINT), color(_color), intense(_intense), spotAngle(-1){
+	Light(const Camera &cam, Vec4 _color, float _intense, light_t _type) : type(_type), color(_color), intense(_intense), spotAngle(-1){
 		Vec4 t = cam.position;
 		t += cam.direction;
 		state = Camera(cam.position, t, Vec4(4, 0., 1., 0.));
