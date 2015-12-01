@@ -118,6 +118,7 @@ Mat4 projection;
 
 vector<Camera*> cameras;
 vector<Camera*>::iterator currentCam;
+vector<Light>::iterator currentLight;
 
 Camera *currentCamera;
 Program gridProgram;
@@ -127,6 +128,7 @@ Lines grid = Lines(h_lines + v_lines);
 Cube cube = Cube(24., Vec4(4, 170., 24., 170.)), bigCube = Cube(480., Vec4(4, 0., -240)), bigBigCube(9600., Vec4(4, 0., -5300));
 Buffer gridbuf, cubebuf, infobuf;
 vector<Light> lights;
+Camera Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
 
 namespace cg {
 	const float areaR = 200.;
@@ -143,6 +145,25 @@ namespace cg {
 	}
 }
 
+namespace lts {
+	void SetCamera() {
+		currentCam = cameras.begin() + (lights.size() > 0 ? std::distance(lights.begin(), currentLight) + 1 : 0);
+		currentCamera = *currentCam;
+	}
+	void DeleteCurrentLight() {
+		if (lights.size() < 1) return;
+		currentLight = lights.erase(currentLight);
+	}
+	void IncreaseBrightness() {
+		if (lights.size() < 1) return;
+		(*currentLight).intense += 0.2;
+	}
+	void DecreaseBrightness() {
+		if (lights.size() < 1) return;
+		(*currentLight).intense -= (*currentLight).intense > 0 ? 0.2 : 0;
+	}
+}
+
 struct CamInfo {
 	Lines lines = Lines(7);
 	const int ox = 0, oy = 1, oz = 2, dir = 3, pitch = 4, ht = 5, htscale = 6;
@@ -153,6 +174,12 @@ struct CamInfo {
 		lines.SetLine(ht, -0.7, cam.position[1]/100, 0., -0.3, cam.position[1]/100, 0.);
 		lines.FillBuffer(&infobuf, infoProgram);
 		infobuf.Draw(infoProgram);
+	}
+	void Init() {
+		lines.SetLine(ox, .3,  0.,  0., .7, 0., 0.);
+		lines.SetLine(oy, .5 , -.7,  0., .5, .7, 0.);
+		lines.SetLine(oz, 0. , -.7,  0., 0., .7, 0.);
+		lines.SetLine(htscale, -.5, -.7, 0., -.5, .7, 0.);
 	}
 } info;
 
@@ -182,28 +209,28 @@ inline void handleKeys() {
 	if (isPressed[(int)'d']) {
 		currentCamera->MoveSideway(speed);
 	}
-	if (isPressed[(int)'u']) {
+	if (false && isPressed[(int)'`']) {
 		currentCamera->Rotate(currentCamera->rightHand(), rotateSpeed);
 	}
-	if (isPressed[(int)'j']) {
+	if (false && isPressed[(int)'`']) {
 		currentCamera->Rotate(currentCamera->rightHand(), -rotateSpeed);
 	}
-	if (isPressed[(int)'p']) {
-		speed = (abs((int)(speed*100) + 15)%1000)/100.;
+	if (isPressed[(int)'r']) {
+		speed = (abs((int)(speed*100) + 2)%1000)/100.;
 	}
-	if (isPressed[(int)'o']) {
-		speed = (abs((int)(speed*100) - 15)%1000)/100.;
+	if (isPressed[(int)'f']) {
+		speed = (abs((int)(speed*100) - 2)%1000)/100.;
 	}
-	if (isPressed[(int)'l']) {
-		rotateSpeed = (abs((int)(rotateSpeed*100) + 5)%1000)/100.;
+	if (isPressed[(int)'t']) {
+		rotateSpeed = (abs((int)(rotateSpeed*100) + 1)%1000)/100.;
 	}
-	if (isPressed[(int)'k']) {
-		rotateSpeed = (abs((int)(rotateSpeed*100) - 5)%1000)/100.;
+	if (isPressed[(int)'g']) {
+		rotateSpeed = (abs((int)(rotateSpeed*100) - 1)%1000)/100.;
 	}
-	if (isPressed[(int)'n']) {
+	if (isPressed[(int)'c']) {
 		projection = currentCamera->projectionMatrix(currentCamera->zoom += 0.4, WT/HT, 0.1, visibility);
 	}
-	if (isPressed[(int)'b']) {
+	if (isPressed[(int)'v']) {
 		projection = currentCamera->projectionMatrix(currentCamera->zoom -= 0.4, WT/HT, 0.1, visibility);
 	}
 }
@@ -213,7 +240,7 @@ inline void Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gridProgram.Use();
 	view = currentCamera->GetView();
-	cout << *currentCamera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
+	//cout << *currentCamera << view << endl << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad\n\n\n\n";
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data, gridProgram.Location("trans", 1));
 	gridbuf.Draw(gridProgram);
@@ -230,7 +257,6 @@ inline void Render() {
 	bigCube.FillBuffer(&cubebuf, cubeProgram);
 	cubebuf.Draw(cubeProgram);
 
-
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
 	infoProgram.UniformMatrix(MVP.transposed().data, infoProgram.Location("trans", 1));
@@ -241,12 +267,42 @@ inline void Render() {
 
 void handleKey(unsigned char key, int x, int y) {
 	isPressed[(int)key] = true;
-	if (key == 'm') {
-		if (++currentCam == cameras.end())
-			currentCam = cameras.begin();
-		currentCamera = *currentCam;
-		projection = currentCamera->projectionMatrix(currentCamera->zoom, WT/HT, 0.1, visibility);
+	if (key == '.') {
+		if (lights.size() > 0 && ++currentLight == lights.end())
+			currentLight = lights.begin();
+//		projection = currentCamera->projectionMatrix(currentCamera->zoom, WT/HT, 0.1, visibility);
 	}
+	if (key == ',') {
+		if (lights.size() > 0 && currentLight-- == lights.begin())
+			currentLight = lights.end() - 1;
+//		projection = currentCamera->projectionMatrix(currentCamera->zoom, WT/HT, 0.1, visibility);
+	}
+	if (key == 'l') {
+
+	}
+	using namespace lts;
+	if (key == '0') {
+		DeleteCurrentLight();
+	}
+	if (key == '=') {
+		IncreaseBrightness();
+	}
+	if (key == '-') {
+		DecreaseBrightness();
+	}
+	if (key == '0' + DIR) {
+		lights.push_back(Light(currentCamera->direction, currentCamera->direction, 1.));
+		currentLight = lights.end() - 1;
+	}
+	if (key == '0' + POINT) {
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 1.));
+		currentLight = lights.end() - 1;
+	}
+	if (key == '0' + SPOT) {
+		lights.push_back(Light(*currentCamera, currentCamera->direction, 1., 10.));
+		currentLight = lights.end() - 1;
+	}
+
 }
 
 void handleUpKey(unsigned char key, int x, int y) {
@@ -298,8 +354,7 @@ int main(int argc, char** argv) {
 	glEnable(GL_DEPTH_TEST);
 	glutMouseWheelFunc(mouseWheel);
 	glewExperimental = GL_TRUE;
-	GLenum res = glewInit();
-	if (res != GLEW_OK)
+	if (glewInit() != GLEW_OK)
 		return 1;
 
 	gridProgram = Program(
@@ -316,17 +371,7 @@ int main(int argc, char** argv) {
 
 	cg::CreateGrid();
 
-	Camera
-			Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
-
-	Vec4 vector = Vec4(4, 1.);
-
-	lights.push_back(Light(POINT, Vec4(4, 0., 10., 0.), Vec4(4, 1., 1., 1.), 0.));
-	//lights.push_back(Light(DIR, Vec4(4, 50., 36., -60.), Vec4(4, 1., 1., 1), 0.));
-
 	cameras.push_back(&Cam1);
-	cameras.push_back(&(lights.at(0).state));
-
 	currentCam = cameras.begin();
 	currentCamera = *currentCam;
 
@@ -337,17 +382,12 @@ int main(int argc, char** argv) {
 	glClearColor(backg*.136, backg*.204, backg*.252, 0.5f);
 	projection = currentCamera->projectionMatrix(45., WT/HT, 0.1, visibility);
 
-	info.lines.SetLine(info.ox, .3,  0.,  0., .7, 0., 0.);
-	info.lines.SetLine(info.oy, .5 , -.7,  0., .5, .7, 0.);
-	info.lines.SetLine(info.oz, 0. , -.7,  0., 0., .7, 0.);
-	info.lines.SetLine(info.htscale, -.5, -.7, 0., -.5, .7, 0.);
+	info.Init();
 
 	grid.FillBuffer(&gridbuf, gridProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
 
 	glutTimerFunc(30, timer, 0);
 	glutMainLoop();
-
-
 	return 0;
 }

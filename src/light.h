@@ -15,17 +15,16 @@ typedef enum {
 
 class Light {
 public:
-	Light(Vec4 _pos, Vec4 _dir, Vec4 _color, float _intense, float _spotAngle) : color(_color), intense(_intense), spotAngle(_spotAngle){
-		type = SPOT;
-		state = Camera(_pos, _pos+_dir, Vec4(4, 0., 1.));
+	Light(const Camera &cam, Vec4 _color, float _intense, float _spotAngle) : type(SPOT), color(_color), intense(_intense), spotAngle(cos(_spotAngle)){
+		state = Camera(cam.position, cam.target, Vec4(4, 0., 1.));
+		state.direction = cam.direction;
 	}
-	Light(light_t _type, Vec4 _state, Vec4 _color, float _intense) : type(_type), color(_color), intense(_intense), spotAngle(-1){
-		if (_type == POINT) {
-			state = Camera(_state, Vec4(4, 100., 0., 100.), Vec4(4, 0., 1., 0.));
-		} else {
-			state = Camera(Vec4(4, 1.), Vec4(4), Vec4(4, 0., 1.));
-			state.direction = _state;
-		}
+	Light(Vec4 _direction, Vec4 _color, float _intense) : type(DIR), color(_color), intense(_intense), spotAngle(-1){
+		state = Camera(Vec4(4, 1.), Vec4(4), Vec4(4, 0., 1.));
+		state.direction = _direction;
+	}
+	Light(const Camera &cam, Vec4 _color, float _intense) : type(POINT), color(_color), intense(_intense), spotAngle(-1){
+		state = Camera(cam.position, cam.target, cam.up);
 	}
 	void Uniform(int i, Program prog) {
 		std::stringstream s; s << i;
@@ -36,10 +35,12 @@ public:
 		glUniform3f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].dir").c_str()), dir[0], dir[1], dir[2]);
 		glUniform1i(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].type").c_str()), type);
 		glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].spotAngle").c_str()), spotAngle);
+		glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].intense").c_str()), intense);
 	}
 	light_t type;
 	Camera state;
 	Vec4   color;
+	int enabled = 1;
 	float  intense;
 	float spotAngle;
 	Light();
