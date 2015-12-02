@@ -70,3 +70,22 @@ void Cube::FillBuffer(Buffer *buff, Program prog) {
 	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "norm"));
 	glBindVertexArray(0);
 }
+
+void Plane::FillBuffer(Buffer *buff, Program prog) {
+	glBindBuffer(GL_ARRAY_BUFFER, buff->vbo);
+	glBufferData(GL_ARRAY_BUFFER, 2*(4*3) * sizeof(float), vertex_normals, GL_STATIC_DRAW);
+	glBindVertexArray(buff->vao);
+	buff->first = 0;
+	buff->count = 4*3;
+	buff->mode = GL_TRIANGLES;
+	glVertexAttribPointer(glGetAttribLocation(prog.handler, "vertexPosition"), 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "vertexPosition"));
+	glVertexAttribPointer(glGetAttribLocation(prog.handler, "norm"), 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(4*3*sizeof(float)));
+	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "norm"));
+	glBindVertexArray(0);
+}
+void Plane::FillIndexBuffer(Buffer *buff, Program prog) {
+	prog.Use();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buff->via);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned short int), indexes, GL_STATIC_DRAW);
+}

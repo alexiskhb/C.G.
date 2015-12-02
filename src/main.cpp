@@ -13,77 +13,8 @@
 #include <ctime>
 #include <vector>
 #include "light.h"
+#include <SOIL/SOIL.h>
 
-
-/*
-mat translate(mat, vec) m = tmat*mat, tmat =
- 1 0 0 v1
- 0 1 0 v2
- 0 0 1 v3
- 0 0 0  1
-
-mat rotate(mat, vec axis, angle)
-mat scale(mat, vec)
-then mult rmat*vetrex
-
-mat ortho(left, right, top, bottom, near, far) //cuts
-mat frustum(left, right, top, bottom, near, far) //cut pyramide
-mat perspective(field_of_view_y(angle), aspect_relative(=w/h), near, far)
-r2mat
-
-shader <- rmat*r2mat
-
-struct Camera
-float fovy, near, far
-int w, h
-vec position, targetview, side
-
-  /
-  | sidex, sidey, sidez, x
-  | ypx, upy, upz, y
-  | targetx, ty, tz, z
-  | 0 0 0 1 ------ view
-  \
- *
- x
- y
- z
- 1
-
-cameraMove(camera, vec)
-cameraRotate(camera, vec, angle)
-cameraScale(camera, vec)
-cameraZoom(camera, float)
-lookAt(vec pos, target, side)
-
- uniform mat4 mvp
- get uniform allocation
-
- glutkeyboardfunc
-*/
-
-/*
- * specExp(yarkost' pyatna obyazatel'no vstroit' v material)
- *
- *directional
- *  dir
- *  color
- *
- *point
- *  pos
- *  color
- *  attenuation(a, b, c) (1 / a+bd+cd^2)
- *
- *spot
- *  pos
- *  color
- *  dir
- *  zatuhanie
- *  angle
- *
- *ambient
- *
-*/
 /*
  * glGenBuffer
  * glBufferData(GL_ELEMENT_ARRAY_BUFFER)
@@ -110,6 +41,7 @@ char gridVertexShaderName[] = "../shaders/gridVertexShader.glsl";
 char infoFragmentShaderName[] = "../shaders/infoFragmentShader.glsl";
 char infoVertexShaderName[] = "../shaders/infoVertexShader.glsl";
 char cubeFragmentShaderName[] = "../shaders/cubeFragmentShader.glsl";
+char textureName[] = "../textures/water1.jpg";
 
 char lightType[][20] = {"", "DIR", "SPOT", "POINT"};
 
@@ -117,6 +49,8 @@ Mat4 MVP;
 Mat4 model = Mat4::ident();
 Mat4 view;
 Mat4 projection;
+
+GLuint texture;
 
 vector<Camera*> cameras;
 //vector<Camera*>::iterator currentCam;
@@ -132,10 +66,11 @@ Buffer gridbuf, cubebuf, infobuf;
 vector<Light> lights;
 Camera Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
 
+Plane plane(Vec4(4, 0., 200., 0.), 200.);
+
 namespace cg {
 	const float areaR = 200.;
 	void CreateGrid() {
-
 		for(int i = 0; i < h_lines; i += 2) {
 			grid.SetLine(    i, -areaR,  areaR/h_lines*i, areaR,  areaR/h_lines*i);
 			grid.SetLine((i+1), -areaR, -areaR/h_lines*i, areaR, -areaR/h_lines*i);
@@ -262,12 +197,13 @@ inline void Render() {
 	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
 	cubeProgram.UniformMatrix((model).data, cubeProgram.Location("model", 1));
 
-//	cube.FillIndexBuffer(&cubebuf, cubeProgram);
-//	bigCube.FillIndexBuffer(&cubebuf, cubeProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
-	cubebuf.DrawElements(cubeProgram, 36, cube.indexes);
+	cubebuf.DrawElements(cubeProgram, 36, cube.indexes, cube.vertex);
 	bigCube.FillBuffer(&cubebuf, cubeProgram);
-	cubebuf.DrawElements(cubeProgram, 36, bigCube.indexes);
+	cubebuf.DrawElements(cubeProgram, 36, bigCube.indexes, bigCube.vertex);
+
+	plane.FillBuffer(&cubebuf, cubeProgram);
+	cubebuf.DrawElements(cubeProgram, 6, plane.indexes, plane.vertex_normals);
 
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
@@ -357,7 +293,7 @@ inline void handleMouse(int x, int y) {
 void timer(int value) {
 	static Light clight;
 	handleKeys();
-	cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad" << endl;
+	//cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad" << endl;
 	if (lights.size() > 0) {
 		clight = *currentLight;
 		cout << "\ncurrent light: " << std::distance(lights.begin(), currentLight) << "_" << lightType[clight.type] << endl;
@@ -370,6 +306,15 @@ void timer(int value) {
 void mouseWheel(int button, int dir, int x, int y) {
 	projection = currentCamera->projectionMatrix(currentCamera->zoom += dir*0.5, WT/HT, 0.1, visibility);
 	(cout << "!!!").flush();
+}
+
+void LoadTextures() {
+	int texh, texw;
+	unsigned char* image =
+	    SOIL_load_image(textureName, &texw, &texh, 0, SOIL_LOAD_RGB);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texw, texh, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glGenTextures(1, &texture);
+
 }
 
 int main(int argc, char** argv) {
@@ -418,6 +363,9 @@ int main(int argc, char** argv) {
 	projection = currentCamera->projectionMatrix(45., WT/HT, 0.1, visibility);
 
 	info.Init();
+
+	plane.FillIndexBuffer(&cubebuf, cubeProgram);
+	plane.FillBuffer(&cubebuf, cubeProgram);
 
 	cube.FillIndexBuffer(&cubebuf, cubeProgram);
 	grid.FillBuffer(&gridbuf, gridProgram);

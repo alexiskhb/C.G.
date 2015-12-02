@@ -82,10 +82,13 @@ public:
 		glDrawArrays(mode, first, count);
 		glBindVertexArray(0);
 	}
-	void DrawElements(Program prog, GLint elem_cnt, unsigned short int *indexes) {
+	void DrawElements(Program prog, GLint elem_cnt, unsigned short int *indexes, float *vertex) {
 		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, via);
+		glVertexPointer(3, GL_FLOAT, 0, vertex);
 		glDrawElements(mode, elem_cnt, GL_UNSIGNED_SHORT, 0);
+		glBindVertexArray(0);
 	}
 };
 
