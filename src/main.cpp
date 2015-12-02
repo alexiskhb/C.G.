@@ -42,27 +42,29 @@ char infoFragmentShaderName[] = "../shaders/infoFragmentShader.glsl";
 char infoVertexShaderName[] = "../shaders/infoVertexShader.glsl";
 char cubeFragmentShaderName[] = "../shaders/cubeFragmentShader.glsl";
 char textureName[] = "../textures/water1.jpg";
+char lightSourceFragmentShader[] = "../shaders/lightSourceFragmentShader.glsl";
 
 char lightType[][20] = {"", "DIR", "SPOT", "POINT"};
 
 Mat4 MVP;
-Mat4 model = Mat4::ident();
+Mat4 model = Mat4::ident(), lmodel;
 Mat4 view;
 Mat4 projection;
 
 GLuint texture;
 
 vector<Camera*> cameras;
-//vector<Camera*>::iterator currentCam;
 vector<Light>::iterator currentLight;
 
 Camera *currentCamera;
+Camera *currentViewCamera;
 Program gridProgram;
 Program infoProgram;
 Program cubeProgram;
+Program lsourceProgram;
 Lines grid = Lines(h_lines + v_lines);
 Cube cube = Cube(24., Vec4(4, 170., 24., 170.)), bigCube = Cube(480., Vec4(4, 0., -240)), bigBigCube(9600., Vec4(4, 0., -5300));
-Buffer gridbuf, cubebuf, infobuf;
+Buffer gridbuf, cubebuf, infobuf, lcubebuf;
 vector<Light> lights;
 Camera Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
 
@@ -83,6 +85,8 @@ namespace cg {
 }
 
 namespace lts {
+	bool isLightView = false;
+	bool isLightControl = false;
 	void SetCamera() {
 		if (lights.size() < 1) return;
 		currentCamera = &((*currentLight).state);
@@ -184,14 +188,14 @@ inline void Render() {
 	handleKeys();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gridProgram.Use();
-	view = currentCamera->GetView();
+	view = currentViewCamera->GetView();
 	MVP  = projection * view * model;
 	gridProgram.UniformMatrix(MVP.transposed().data, gridProgram.Location("trans", 1));
 	gridbuf.Draw(gridProgram);
 
 	cubeProgram.Use();
 	cubeProgram.UniformInt(lights.size(), cubeProgram.Location("lightamt", 1));
-	cubeProgram.UniformVec(currentCamera->position, cubeProgram.Location("eye", 1));
+	cubeProgram.UniformVec(currentViewCamera->position, cubeProgram.Location("eye", 1));
 	for(int i = 0; i < lights.size(); i++)
 		lights.at(i).Uniform(i, cubeProgram);
 	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
@@ -204,6 +208,18 @@ inline void Render() {
 
 	plane.FillBuffer(&cubebuf, cubeProgram);
 	cubebuf.DrawElements(cubeProgram, 6, plane.indexes, plane.vertex_normals);
+
+	lsourceProgram.Use();
+	for(int i = 0; i < lights.size(); i++) {
+		if (lights[i].type == DIR || currentViewCamera == &lights[i].state) continue;
+		lmodel = Mat4::ident().translated(lights[i].state.position);
+		lsourceProgram.UniformVec(lights[i].color, lsourceProgram.Location("incolor", 1));
+		lsourceProgram.UniformFloat(lights[i].intense, lsourceProgram.Location("intense", 1));
+		lsourceProgram.UniformMatrix((projection*view*lmodel).transposed().data, lsourceProgram.Location("trans", 1));
+		lights[i].source.FillBuffer(&lcubebuf, lsourceProgram);
+		lights[i].source.FillIndexBuffer(&lcubebuf, lsourceProgram);
+		lcubebuf.DrawElements(lsourceProgram, 36, lights[i].source.indexes, lights[i].source.vertex);
+	};
 
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
@@ -226,9 +242,23 @@ void handleKey(unsigned char key, int x, int y) {
 	using namespace lts;
 	if (key == 'l') {
 		SetCamera();
+		isLightView = true;
+		isLightControl = true;
+		currentViewCamera = currentCamera;
 	}
 	if (key == 'k') {
-		currentCamera = &Cam1;
+		currentViewCamera = currentCamera = &Cam1;
+		isLightView = false;
+		isLightControl = false;
+	}
+	if (key == 'o') {
+		if (lights.size() > 0) {
+			isLightControl = !isLightControl;
+		}
+		if (isLightControl)
+			SetCamera();
+		else
+			currentCamera = &Cam1;
 	}
 	if (key == '0') {
 		DeleteCurrentLight();
@@ -239,21 +269,27 @@ void handleKey(unsigned char key, int x, int y) {
 	}
 	if (key == 'g') {
 		(*currentLight).color += Vec4(4, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == 'h') {
 		(*currentLight).color += Vec4(4, 0, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == 'j') {
 		(*currentLight).color += Vec4(4, 0, 0, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == 'b') {
 		(*currentLight).color -= Vec4(4, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == 'n') {
 		(*currentLight).color -= Vec4(4, 0, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == 'm') {
 		(*currentLight).color -= Vec4(4, 0, 0, 0.05);
+		(*currentLight).color.normalize();
 	}
 	if (key == '0' + DIR) {
 		lights.push_back(Light(*currentCamera, currentCamera->direction, 1.05, DIR));
@@ -267,7 +303,6 @@ void handleKey(unsigned char key, int x, int y) {
 		lights.push_back(Light(*currentCamera, currentCamera->direction, 20., 10.));
 		currentLight = lights.end() - 1;
 	}
-
 }
 
 void handleUpKey(unsigned char key, int x, int y) {
@@ -350,14 +385,20 @@ int main(int argc, char** argv) {
 		Shader(gridVertexShaderName, GL_VERTEX_SHADER),
 		Shader(cubeFragmentShaderName, GL_FRAGMENT_SHADER));
 
+	lsourceProgram = Program(
+		Shader(infoVertexShaderName, GL_VERTEX_SHADER),
+		Shader(lightSourceFragmentShader, GL_FRAGMENT_SHADER));
+
 	cg::CreateGrid();
 
 	cameras.push_back(&Cam1);
-	currentCamera = &Cam1;
+	currentViewCamera = currentCamera = &Cam1;
 
 	gridbuf.Init();
 	cubebuf.Init();
 	infobuf.Init();
+	lcubebuf.Init();
+
 	float backg = 0.6;
 	glClearColor(backg*.136, backg*.204, backg*.252, 0.5f);
 	projection = currentCamera->projectionMatrix(45., WT/HT, 0.1, visibility);

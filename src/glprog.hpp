@@ -50,6 +50,9 @@ public:
 	void UniformInt(const GLint data, GLuint int_handler) {
 		glUniform1i(int_handler, data);
 	}
+	void UniformFloat(const GLfloat data, GLuint fl_handler) {
+		glUniform1f(fl_handler, data);
+	}
 	void UniformVec(Vec4 pos, GLuint vec_handler) {
 		glUniform3f(vec_handler, pos[0], pos[1], pos[2]);
 	}

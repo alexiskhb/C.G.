@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 #include "glprog.hpp"
-
+#include "lines.hpp"
 
 typedef enum {
 	NONE, DIR = 1, SPOT = 2, POINT = 3
@@ -22,6 +22,7 @@ public:
 		state.up        = cam.up;
 		state.direction = cam.direction;
 		state.side      = cam.side;
+		source = Cube(3, Vec4(4));
 	}
 	Light(Camera cam, Vec4 _color, float _intense, light_t _type) : type(_type), color(_color), intense(_intense), spotAngle(-1){
 		state = Camera(Vec4(4, 1.), Vec4(4, 0., 1.), Vec4(4, 0., 0., 1.));
@@ -30,6 +31,7 @@ public:
 		state.up        = cam.up;
 		state.direction = cam.direction;
 		state.side      = cam.side;
+		source = Cube(3, Vec4(4));
 	}
 	void Uniform(int i, Program prog) {
 		std::stringstream s; s << i;
@@ -49,6 +51,7 @@ public:
 				glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].spotAngle").c_str()), spotAngle);
 		}
 	}
+	Cube source;
 	light_t type;
 	Camera state;
 	Vec4   color;
