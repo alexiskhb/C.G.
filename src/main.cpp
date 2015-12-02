@@ -237,6 +237,12 @@ inline void handleKeys() {
 	if (isPressed[(int)'v']) {
 		projection = currentCamera->projectionMatrix(currentCamera->zoom -= 0.4, WT/HT, 0.1, visibility);
 	}
+	if (isPressed[(int)'=']) {
+		lts::IncreaseBrightness();
+	}
+	if (isPressed[(int)'-']) {
+		lts::DecreaseBrightness();
+	}
 }
 
 inline void Render() {
@@ -255,10 +261,13 @@ inline void Render() {
 		lights.at(i).Uniform(i, cubeProgram);
 	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
 	cubeProgram.UniformMatrix((model).data, cubeProgram.Location("model", 1));
+
+//	cube.FillIndexBuffer(&cubebuf, cubeProgram);
+//	bigCube.FillIndexBuffer(&cubebuf, cubeProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
-	cubebuf.Draw(cubeProgram);
+	cubebuf.DrawElements(cubeProgram, 36, cube.indexes);
 	bigCube.FillBuffer(&cubebuf, cubeProgram);
-	cubebuf.Draw(cubeProgram);
+	cubebuf.DrawElements(cubeProgram, 36, bigCube.indexes);
 
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
@@ -289,10 +298,8 @@ void handleKey(unsigned char key, int x, int y) {
 		DeleteCurrentLight();
 	}
 	if (key == '=') {
-		IncreaseBrightness();
 	}
 	if (key == '-') {
-		DecreaseBrightness();
 	}
 	if (key == 'g') {
 		(*currentLight).color += Vec4(4, 0.05);
@@ -412,6 +419,7 @@ int main(int argc, char** argv) {
 
 	info.Init();
 
+	cube.FillIndexBuffer(&cubebuf, cubeProgram);
 	grid.FillBuffer(&gridbuf, gridProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
 

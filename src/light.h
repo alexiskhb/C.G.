@@ -15,20 +15,26 @@ typedef enum {
 
 class Light {
 public:
-	Light(const Camera &cam, Vec4 _color, float _intense, float _spotAngle) : type(SPOT), color(_color), intense(_intense), spotAngle(cos(_spotAngle)){
-		Vec4 t = cam.position;
-		t -= cam.direction;
-		state = Camera(cam.position, t, Vec4(4, 0., 1., 0.));
+	Light(Camera cam, Vec4 _color, float _intense, float _spotAngle) : type(SPOT), color(_color), intense(_intense), spotAngle(cos(_spotAngle)){
+		state = Camera(Vec4(4, 1.), Vec4(4, 0., 1.), Vec4(4, 0., 0., 1.));
+		state.position  = cam.position;
+		state.target    = cam.target;
+		state.up        = cam.up;
+		state.direction = cam.direction;
+		state.side      = cam.side;
 	}
-	Light(const Camera &cam, Vec4 _color, float _intense, light_t _type) : type(_type), color(_color), intense(_intense), spotAngle(-1){
-		Vec4 t = cam.position;
-		t += cam.direction;
-		state = Camera(cam.position, t, Vec4(4, 0., 1., 0.));
+	Light(Camera cam, Vec4 _color, float _intense, light_t _type) : type(_type), color(_color), intense(_intense), spotAngle(-1){
+		state = Camera(Vec4(4, 1.), Vec4(4, 0., 1.), Vec4(4, 0., 0., 1.));
+		state.position  = cam.position;
+		state.target    = cam.target;
+		state.up        = cam.up;
+		state.direction = cam.direction;
+		state.side      = cam.side;
 	}
 	void Uniform(int i, Program prog) {
 		std::stringstream s; s << i;
 		Vec4 pos = state.position;
-		Vec4 dir = state.direction;
+		Vec4 dir = state.dir();
 		if (disabled)
 			glUniform1f(glGetUniformLocation(prog.handler, ("lights[" + s.str() + "].disabled").c_str()), disabled);
 		else {

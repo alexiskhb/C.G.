@@ -65,20 +65,27 @@ class Buffer {
 public:
 	GLuint vbo;
 	GLuint vao;
+	GLuint via;
 	GLint first;
 	GLint count;
 	GLenum mode;
 	Buffer() {
-		first = count = mode = vao = vbo = 0;
+		first = count = mode = vao = vbo = via = 0;
 	}
 	void Init() {
 		glGenVertexArrays(1, &vao);
 		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &via);
 	}
 	void Draw(Program prog) {
 		glBindVertexArray(vao);
 		glDrawArrays(mode, first, count);
 		glBindVertexArray(0);
+	}
+	void DrawElements(Program prog, GLint elem_cnt, unsigned short int *indexes) {
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, via);
+		glDrawElements(mode, elem_cnt, GL_UNSIGNED_SHORT, 0);
 	}
 };
 

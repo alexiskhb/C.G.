@@ -28,9 +28,11 @@ class Cube{
 public:
 	int vamt = 36;
 	float vertex[2*6*6*3];
+	unsigned short int indexes[36];
 	GLenum mode = GL_TRIANGLES;
 	void SetTriangle(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2, floatv x3, floatv y3, floatv z3);
 	void FillBuffer(Buffer *buff, Program prog);
+	void FillIndexBuffer(Buffer *buff, Program prog);
 	Cube(floatv side, Vec4 center){
 		floatv a = side/2;
 		floatv x = center[0], y = center[1], z = center[2];

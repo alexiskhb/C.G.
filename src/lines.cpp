@@ -49,6 +49,14 @@ void Lines::FillBuffer(Buffer *buff, Program prog) {
 	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "vertexPosition"));
 }
 
+void Cube::FillIndexBuffer(Buffer *buff, Program prog) {
+	for(int i = 0; i < 36; i++)
+		indexes[i] = i;
+	prog.Use();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buff->via);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned short int), indexes, GL_STATIC_DRAW);
+}
+
 void Cube::FillBuffer(Buffer *buff, Program prog) {
 	glBindBuffer(GL_ARRAY_BUFFER, buff->vbo);
 	glBufferData(GL_ARRAY_BUFFER, 2*(36*3) * sizeof(float), vertex, GL_STATIC_DRAW);
