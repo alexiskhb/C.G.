@@ -50,8 +50,10 @@ void Lines::FillBuffer(Buffer *buff, Program prog) {
 }
 
 void Cube::FillIndexBuffer(Buffer *buff, Program prog) {
-	for(int i = 0; i < 36; i++)
-		indexes[i] = i;
+	char v[] = "012230456674730047621156015540326673";
+	for(int i = 0; i < 36; i++) {
+		indexes[i] = v[i] - '0';
+	}
 	prog.Use();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buff->via);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned short int), indexes, GL_STATIC_DRAW);
@@ -84,6 +86,7 @@ void Plane::FillBuffer(Buffer *buff, Program prog) {
 	glEnableVertexAttribArray(glGetAttribLocation(prog.handler, "norm"));
 	glBindVertexArray(0);
 }
+
 void Plane::FillIndexBuffer(Buffer *buff, Program prog) {
 	prog.Use();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buff->via);

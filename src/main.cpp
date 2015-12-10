@@ -24,13 +24,42 @@
  * TODO landscape
  * Perlin's noise (nooooouu)
  */
+/*
+ * DevIL
+ * ImageMagic
+ * CxImage
+ * OpenCV
+ * gli
+ *------------------libs
+ *
+ * Texture object
+ * GL_TEXTURE_2D
+ *
+ * glGenTextures(&tex)
+ * glBindTexture(GL_TEXTURE_2D, tex)
+ * glTexImage2D(GL_TEXTURE_2D, kol-vo sloev (0), GL_RGB, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+ *
+ *
+ * gkTexParameterf(, GL_texture_minfilter/magfilter, image, GL_LINEAR)
+ *
+ * Texture Unit Unite
+ * glActiveTexture(GL_TEXTURE0, )
+ *
+ * sampler object
+ * Sampler uniform variable(in glsl)
+ * uniform sampler2D s
+ * ...
+ * vec4 a = texture2D(s, uv) //exchange with diffuse
+ *
+ *
+ */
 
 #define CAPTION ("Shch")
 
 using namespace std;
 
-const float WT = 1366./2;
-const float HT = 768./2;
+const float WT = 1366.;
+const float HT = 768.;
 const float visibility = 1000.;
 float speed = 1.;
 float rotateSpeed = 1.;
@@ -189,17 +218,16 @@ inline void Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	gridProgram.Use();
 	view = currentViewCamera->GetView();
-	MVP  = projection * view * model;
-	gridProgram.UniformMatrix(MVP.transposed().data, gridProgram.Location("trans", 1));
-	gridbuf.Draw(gridProgram);
+//MVP  = projection * view * model, but model == ident
+	MVP  = projection * view;
 
 	cubeProgram.Use();
-	cubeProgram.UniformInt(lights.size(), cubeProgram.Location("lightamt", 1));
-	cubeProgram.UniformVec(currentViewCamera->position, cubeProgram.Location("eye", 1));
+	cubeProgram.UniformInt(lights.size(), cubeProgram.Location("lightamt"));
+	cubeProgram.UniformVec(currentViewCamera->position, cubeProgram.Location("eye"));
 	for(int i = 0; i < lights.size(); i++)
 		lights.at(i).Uniform(i, cubeProgram);
-	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans", 1));
-	cubeProgram.UniformMatrix((model).data, cubeProgram.Location("model", 1));
+	cubeProgram.UniformMatrix(MVP.transposed().data, cubeProgram.Location("trans"));
+	cubeProgram.UniformMatrix((model).data, cubeProgram.Location("model"));
 
 	cube.FillBuffer(&cubebuf, cubeProgram);
 	cubebuf.DrawElements(cubeProgram, 36, cube.indexes, cube.vertex);
@@ -213,9 +241,9 @@ inline void Render() {
 	for(int i = 0; i < lights.size(); i++) {
 		if (lights[i].type == DIR || currentViewCamera == &lights[i].state) continue;
 		lmodel = Mat4::ident().translated(lights[i].state.position);
-		lsourceProgram.UniformVec(lights[i].color, lsourceProgram.Location("incolor", 1));
-		lsourceProgram.UniformFloat(lights[i].intense, lsourceProgram.Location("intense", 1));
-		lsourceProgram.UniformMatrix((projection*view*lmodel).transposed().data, lsourceProgram.Location("trans", 1));
+		lsourceProgram.UniformVec(lights[i].color, lsourceProgram.Location("incolor"));
+		lsourceProgram.UniformFloat(lights[i].intense, lsourceProgram.Location("intense"));
+		lsourceProgram.UniformMatrix((projection*view*lmodel).transposed().data, lsourceProgram.Location("trans"));
 		lights[i].source.FillBuffer(&lcubebuf, lsourceProgram);
 		lights[i].source.FillIndexBuffer(&lcubebuf, lsourceProgram);
 		lcubebuf.DrawElements(lsourceProgram, 36, lights[i].source.indexes, lights[i].source.vertex);
@@ -223,7 +251,7 @@ inline void Render() {
 
 	infoProgram.Use();
 	MVP = Mat4::ident().translated(Vec4(4, .7, .7)).scale(Vec4(4, .3, .3, .3));
-	infoProgram.UniformMatrix(MVP.transposed().data, infoProgram.Location("trans", 1));
+	infoProgram.UniformMatrix(MVP.transposed().data, infoProgram.Location("trans"));
 	info.Draw(*currentCamera, infoProgram);
 
 	glutSwapBuffers();
@@ -328,7 +356,7 @@ inline void handleMouse(int x, int y) {
 void timer(int value) {
 	static Light clight;
 	handleKeys();
-	//cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad" << endl;
+	cout << *currentCamera << "S: " << setprecision(3) << speed << "mph " << rotateSpeed << "rad" << endl;
 	if (lights.size() > 0) {
 		clight = *currentLight;
 		cout << "\ncurrent light: " << std::distance(lights.begin(), currentLight) << "_" << lightType[clight.type] << endl;
@@ -364,7 +392,6 @@ int main(int argc, char** argv) {
 	glutKeyboardUpFunc(handleUpKey);
 	glutSpecialFunc(handleSpecKey);
 	glutSpecialUpFunc(handleUpSpecKey);
-	glutSetKeyRepeat(GLUT_KEY_REPEAT_ON);
 	glutPassiveMotionFunc(handleMouse);
 	glutSetCursor(GLUT_CURSOR_NONE);
 	glEnable(GL_DEPTH_TEST);
@@ -411,6 +438,17 @@ int main(int argc, char** argv) {
 	cube.FillIndexBuffer(&cubebuf, cubeProgram);
 	grid.FillBuffer(&gridbuf, gridProgram);
 	cube.FillBuffer(&cubebuf, cubeProgram);
+
+	lsourceProgram.RegisterAttrib("incolor", 1);
+	lsourceProgram.RegisterAttrib("intense", 1);
+	lsourceProgram.RegisterAttrib("trans", 1);
+
+	cubeProgram.RegisterAttrib("lightamt", 1);
+	cubeProgram.RegisterAttrib("eye", 1);
+	cubeProgram.RegisterAttrib("trans", 1);
+	cubeProgram.RegisterAttrib("model", 1);
+
+	infoProgram.RegisterAttrib("trans", 1);
 
 	glutTimerFunc(40, timer, 0);
 	glutMainLoop();

@@ -90,6 +90,18 @@ public:
 	void FillIndexBuffer(Buffer *buff, Program prog);
 };
 
+struct LandPoint {
+	int x;
+	int y;
+	int z;
+};
+
+class Landscape {
+	static const int size = 100;
+	unsigned int indexes[];
+	LandPoint map[size][size];
+};
+
 class Cube{
 public:
 	int vamt = 36;
@@ -103,37 +115,85 @@ public:
 	Cube(floatv side, Vec4 center){
 		floatv a = side/2;
 		floatv x = center[0], y = center[1], z = center[2];
+		SetTriangle(0,
+				x-a, y-a, z-a, //0
+				x+a, y-a, z-a, //1
+				x+a, y+a, z-a);//2
+		SetTriangle(1,
+				x-a, y+a, z-a, //3
+				x-a, y-a, z+a, //4
+				x+a, y-a, z+a);//5
+		SetTriangle(2,
+				x+a, y+a, z+a, //6
+				x-a, y+a, z+a, //7
+				x-a, y-a, z-a);//0
 
-		SetTriangle(0, x-a, y-a, z-a, x+a, y-a, z-a, x+a, y+a, z-a);
+//		SetTriangle(0,
+//				x-a, y-a, z-a, //0
+//				x+a, y-a, z-a, //1
+//				x+a, y+a, z-a);//2
 		SetTriangle(12, 0, 0, -1, 0, 0, -1, 0, 0, -1);
-		SetTriangle(1, x+a, y+a, z-a, x-a, y+a, z-a, x-a, y-a, z-a);
+//		SetTriangle(1,
+//				x+a, y+a, z-a, //2
+//				x-a, y+a, z-a, //3
+//				x-a, y-a, z-a);//0
 		SetTriangle(13, 0, 0, -1, 0, 0, -1, 0, 0, -1);
 
-		SetTriangle(2, x-a, y-a, z+a, x+a, y-a, z+a, x+a, y+a, z+a);
+//		SetTriangle(2,
+//				x-a, y-a, z+a, //4
+//				x+a, y-a, z+a, //5
+//				x+a, y+a, z+a);//6
 		SetTriangle(14, 0, 0, 1, 0, 0, 1, 0, 0, 1);
-		SetTriangle(3, x+a, y+a, z+a, x-a, y+a, z+a, x-a, y-a, z+a);
+//		SetTriangle(3,
+//				x+a, y+a, z+a, //6
+//				x-a, y+a, z+a, //7
+//				x-a, y-a, z+a);//4
 		SetTriangle(15, 0, 0, 1, 0, 0, 1, 0, 0, 1);
 
 
-		SetTriangle(4, x-a, y+a, z+a, x-a, y+a, z-a, x-a, y-a, z-a);
+//		SetTriangle(4,
+//				x-a, y+a, z+a, //7
+//				x-a, y+a, z-a, //3
+//				x-a, y-a, z-a);//0
 		SetTriangle(16, 1, 0, 0, 1, 0, 0, 1, 0, 0);
-		SetTriangle(5, x-a, y-a, z-a, x-a, y-a, z+a, x-a, y+a, z+a);
+//		SetTriangle(5,
+//				x-a, y-a, z-a, //0
+//				x-a, y-a, z+a, //4
+//				x-a, y+a, z+a);//7
 		SetTriangle(17, 1, 0, 0, 1, 0, 0, 1, 0, 0);
 
-		SetTriangle(6, x+a, y+a, z+a, x+a, y+a, z-a, x+a, y-a, z-a);
+//		SetTriangle(6,
+//				x+a, y+a, z+a, //6
+//				x+a, y+a, z-a, //2
+//				x+a, y-a, z-a);//1
 		SetTriangle(18, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-		SetTriangle(7, x+a, y-a, z-a, x+a, y-a, z+a, x+a, y+a, z+a);
+//		SetTriangle(7,
+//				x+a, y-a, z-a, //1
+//				x+a, y-a, z+a, //5
+//				x+a, y+a, z+a);//6
 		SetTriangle(19, -1, 0, 0, -1, 0, 0, -1, 0, 0);
 
 
-		SetTriangle(8, x-a, y-a, z-a, x+a, y-a, z-a, x+a, y-a, z+a);
+//		SetTriangle(8,
+//				x-a, y-a, z-a, //0
+//				x+a, y-a, z-a, //1
+//				x+a, y-a, z+a);//5
 		SetTriangle(20, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-		SetTriangle(9, x+a, y-a, z+a, x-a, y-a, z+a, x-a, y-a, z-a);
+//		SetTriangle(9,
+//				x+a, y-a, z+a, //5
+//				x-a, y-a, z+a, //4
+//				x-a, y-a, z-a);//0
 		SetTriangle(21, 0, -1, 0, 0, -1, 0, 0, -1, 0);
 
-		SetTriangle(10, x-a, y+a, z-a, x+a, y+a, z-a, x+a, y+a, z+a);
+//		SetTriangle(10,
+//				x-a, y+a, z-a, //3
+//				x+a, y+a, z-a, //2
+//				x+a, y+a, z+a);//6
 		SetTriangle(22, 0, 1, 0, 0, 1, 0, 0, 1, 0);
-		SetTriangle(11, x+a, y+a, z+a, x-a, y+a, z+a, x-a, y+a, z-a);
+//		SetTriangle(11,
+//				x+a, y+a, z+a, //6
+//				x-a, y+a, z+a, //7
+//				x-a, y+a, z-a);//3
 		SetTriangle(23, 0, 1, 0, 0, 1, 0, 0, 1, 0);
 	}
 };

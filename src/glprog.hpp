@@ -28,12 +28,15 @@ public:
 	void GetAttribAllocation(const char *var) {
 		glGetAttribLocation(handler, var);
 	}
-	int Location(std::string var, bool is_uniform) {
+	int InitLocation(std::string var, bool is_uniform) {
 		if (is_uniform) {
 			return glGetUniformLocation(handler, var.c_str());
 		} else {
 			return glGetAttribLocation(handler, var.c_str());
 		}
+	}
+	int Location(const std::string &var) {
+		return attribs.at(var);
 	}
 	void EnableVertexAttribArray() {
 		glEnableVertexAttribArray(attribArray);
@@ -61,6 +64,9 @@ public:
 	}
 	void Link() {
 		glLinkProgram(handler);
+	}
+	void RegisterAttrib(const std::string &name, int is_uniform) {
+		attribs.insert(std::pair<const std::string, int>(name, InitLocation(name.c_str(), is_uniform)));
 	}
 };
 

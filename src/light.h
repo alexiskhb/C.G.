@@ -33,7 +33,7 @@ public:
 		state.side      = cam.side;
 		source = Cube(3, Vec4(4));
 	}
-	void Uniform(int i, Program prog) {
+	void Uniform(int i, const Program &prog) {
 		std::stringstream s; s << i;
 		Vec4 pos = state.position;
 		Vec4 dir = state.dir();
