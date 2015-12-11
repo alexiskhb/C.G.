@@ -8,6 +8,9 @@ float ambientStrength = 0.5;
 float diffStrength = .8;
 float specStrength = .4;
 
+uniform sampler2D tex;
+in vec2 texCoord;
+
 uniform int lightamt;
 uniform vec3 eye;
 
@@ -22,8 +25,8 @@ struct material {
     vec3 specular;
     float shine;
 } M;
-
-vec3 cubeColor = vec3(1.0, 0.32, 1.0);
+//0.32
+vec3 cubeColor = vec3(1.0, 1.0, 1.0);
 
 struct Light {
 	int type;
@@ -79,8 +82,8 @@ void main(void)
 {
 	M.diffuse = I * 0.4;
 	M.ambient = I * 0.4;
-	M.specular = I * 0.2;
-	M.shine = 4.0;
+	M.specular = I * 0.4;
+	M.shine = 64.0;
 	
 	ambient = M.ambient * ambientStrength;
 	for(int i = 0; i < lightamt; i++) {
@@ -110,8 +113,9 @@ void main(void)
 			ldir = normalize(lights[i].dir);
 			atten = 1;
 		}
-		diffuse = max(dot(ldir, normal), 0.0) * M.diffuse * diffStrength * lights[i].color;
+		diffuse = max(dot(ldir, normal), 0.0) * M.diffuse * lights[i].color;
 		result += lights[i].intense*(ambient + diffuse + specular)*atten;
 	}
-	color = vec4(result*cubeColor, 1.0);
+	//color = vec4(result*cubeColor, 1.0);
+	color = texture(tex, texCoord)*vec4(result*cubeColor, 1.0);
 }

@@ -7,6 +7,7 @@
 #include "vec4.hpp"
 #include "mat4.hpp"
 #include "glprog.hpp"
+#include <sstream>
 
 class Lines {
 public:
@@ -65,7 +66,7 @@ public:
 
 class Plane {
 public:
-	float vertex_normals[2*4*3];
+	float vertex_normals[2*4*3 + 8];
 	unsigned short int indexes[6] = {0, 1, 2, 0, 2, 3};
 	Plane() {}
 	Plane(Vec4 cen, float side) : Plane(
@@ -85,6 +86,11 @@ public:
 				vertex_normals[v] = points[i].c[j];
 				vertex_normals[n] = normals[i].c[j];
 			}
+		char v[] = "11010010";
+		for(int i = 24, k = 0; i < 32; i += 2) {
+			vertex_normals[i    ] = v[k++];
+			vertex_normals[i + 1] = v[k++];
+		}
 	}
 	void FillBuffer(Buffer *buff, Program prog);
 	void FillIndexBuffer(Buffer *buff, Program prog);
@@ -105,96 +111,53 @@ class Landscape {
 class Cube{
 public:
 	int vamt = 36;
-	float vertex[2*6*6*3];
+	float vertex[4*6*3*2 + 2*6*4];
 	unsigned short int indexes[36];
 	GLenum mode = GL_TRIANGLES;
-	void SetTriangle(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2, floatv x3, floatv y3, floatv z3);
+	void SetEdge(int st, floatv x1, floatv y1, floatv z1, floatv x2, floatv y2, floatv z2, floatv x3, floatv y3, floatv z3, floatv x4, floatv y4, floatv z4);
 	void FillBuffer(Buffer *buff, Program prog);
 	void FillIndexBuffer(Buffer *buff, Program prog);
 	Cube(){};
 	Cube(floatv side, Vec4 center){
 		floatv a = side/2;
 		floatv x = center[0], y = center[1], z = center[2];
-		SetTriangle(0,
-				x-a, y-a, z-a, //0
-				x+a, y-a, z-a, //1
-				x+a, y+a, z-a);//2
-		SetTriangle(1,
-				x-a, y+a, z-a, //3
-				x-a, y-a, z+a, //4
-				x+a, y-a, z+a);//5
-		SetTriangle(2,
-				x+a, y+a, z+a, //6
-				x-a, y+a, z+a, //7
-				x-a, y-a, z-a);//0
+#define V0 x-a, y-a, z-a
+#define V1 x+a, y-a, z-a
+#define V2 x+a, y+a, z-a
+#define V3 x-a, y+a, z-a
+#define V4 x-a, y-a, z+a
+#define V5 x+a, y-a, z+a
+#define V6 x+a, y+a, z+a
+#define V7 x-a, y+a, z+a
+#define N0  0,  0, -1
+#define N1 -1,  0,  0
+#define N2  0,  0,  1
+#define N3  1,  0,  0
+#define N4  0, -1,  0
+#define N5  0,  1,  0
+#define T0 0, 0
+#define T1 1, 0
+#define T2 1, 1
+#define T3 0, 1
 
-//		SetTriangle(0,
-//				x-a, y-a, z-a, //0
-//				x+a, y-a, z-a, //1
-//				x+a, y+a, z-a);//2
-		SetTriangle(12, 0, 0, -1, 0, 0, -1, 0, 0, -1);
-//		SetTriangle(1,
-//				x+a, y+a, z-a, //2
-//				x-a, y+a, z-a, //3
-//				x-a, y-a, z-a);//0
-		SetTriangle(13, 0, 0, -1, 0, 0, -1, 0, 0, -1);
+		SetEdge(0, V0, V1, V2, V3);
+		SetEdge(1, V3, V0, V4, V7);
+		SetEdge(2, V7, V4, V5, V6);
+		SetEdge(3, V6, V2, V1, V5);
+		SetEdge(4, V5, V4, V0, V1);
+		SetEdge(5, V2, V3, V7, V6);
 
-//		SetTriangle(2,
-//				x-a, y-a, z+a, //4
-//				x+a, y-a, z+a, //5
-//				x+a, y+a, z+a);//6
-		SetTriangle(14, 0, 0, 1, 0, 0, 1, 0, 0, 1);
-//		SetTriangle(3,
-//				x+a, y+a, z+a, //6
-//				x-a, y+a, z+a, //7
-//				x-a, y-a, z+a);//4
-		SetTriangle(15, 0, 0, 1, 0, 0, 1, 0, 0, 1);
+		SetEdge(6,  N0, N0, N0, N0);
+		SetEdge(7,  N1, N1, N1, N1);
+		SetEdge(8,  N2, N2, N2, N2);
+		SetEdge(9,  N3, N3, N3, N3);
+		SetEdge(10, N4, N4, N4, N4);
+		SetEdge(11, N5, N5, N5, N5);
 
-
-//		SetTriangle(4,
-//				x-a, y+a, z+a, //7
-//				x-a, y+a, z-a, //3
-//				x-a, y-a, z-a);//0
-		SetTriangle(16, 1, 0, 0, 1, 0, 0, 1, 0, 0);
-//		SetTriangle(5,
-//				x-a, y-a, z-a, //0
-//				x-a, y-a, z+a, //4
-//				x-a, y+a, z+a);//7
-		SetTriangle(17, 1, 0, 0, 1, 0, 0, 1, 0, 0);
-
-//		SetTriangle(6,
-//				x+a, y+a, z+a, //6
-//				x+a, y+a, z-a, //2
-//				x+a, y-a, z-a);//1
-		SetTriangle(18, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-//		SetTriangle(7,
-//				x+a, y-a, z-a, //1
-//				x+a, y-a, z+a, //5
-//				x+a, y+a, z+a);//6
-		SetTriangle(19, -1, 0, 0, -1, 0, 0, -1, 0, 0);
-
-
-//		SetTriangle(8,
-//				x-a, y-a, z-a, //0
-//				x+a, y-a, z-a, //1
-//				x+a, y-a, z+a);//5
-		SetTriangle(20, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-//		SetTriangle(9,
-//				x+a, y-a, z+a, //5
-//				x-a, y-a, z+a, //4
-//				x-a, y-a, z-a);//0
-		SetTriangle(21, 0, -1, 0, 0, -1, 0, 0, -1, 0);
-
-//		SetTriangle(10,
-//				x-a, y+a, z-a, //3
-//				x+a, y+a, z-a, //2
-//				x+a, y+a, z+a);//6
-		SetTriangle(22, 0, 1, 0, 0, 1, 0, 0, 1, 0);
-//		SetTriangle(11,
-//				x+a, y+a, z+a, //6
-//				x-a, y+a, z+a, //7
-//				x-a, y+a, z-a);//3
-		SetTriangle(23, 0, 1, 0, 0, 1, 0, 0, 1, 0);
+		SetEdge(12, T0, T1, T2, T3, T2, T1);
+		SetEdge(13, T0, T3, T2, T1, T0, T3);
+		SetEdge(14, T2, T3, T0, T1, T2, T1);
+		SetEdge(15, T0, T3, T0, T3, T2, T1);
 	}
 };
 

@@ -70,7 +70,7 @@ char gridVertexShaderName[] = "../shaders/gridVertexShader.glsl";
 char infoFragmentShaderName[] = "../shaders/infoFragmentShader.glsl";
 char infoVertexShaderName[] = "../shaders/infoVertexShader.glsl";
 char cubeFragmentShaderName[] = "../shaders/cubeFragmentShader.glsl";
-char textureName[] = "../textures/water1.jpg";
+char textureName[] = "../textures/lava1.bmp";
 char lightSourceFragmentShader[] = "../shaders/lightSourceFragmentShader.glsl";
 
 char lightType[][20] = {"", "DIR", "SPOT", "POINT"};
@@ -79,8 +79,6 @@ Mat4 MVP;
 Mat4 model = Mat4::ident(), lmodel;
 Mat4 view;
 Mat4 projection;
-
-GLuint texture;
 
 vector<Camera*> cameras;
 vector<Light>::iterator currentLight;
@@ -97,7 +95,9 @@ Buffer gridbuf, cubebuf, infobuf, lcubebuf;
 vector<Light> lights;
 Camera Cam1 = Camera(Vec4(4, 25., 10., 25.), Vec4(4, 0., 10., 0.), Vec4(4, 0., 1., 0.));
 
-Plane plane(Vec4(4, 0., 200., 0.), 200.);
+GLuint tex_handler;
+
+Plane plane(Vec4(4, 500., -10., 0.), 500.);
 
 namespace cg {
 	const float areaR = 200.;
@@ -216,7 +216,7 @@ inline void handleKeys() {
 inline void Render() {
 	handleKeys();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	gridProgram.Use();
+//	gridProgram.Use();
 	view = currentViewCamera->GetView();
 //MVP  = projection * view * model, but model == ident
 	MVP  = projection * view;
@@ -375,8 +375,10 @@ void LoadTextures() {
 	int texh, texw;
 	unsigned char* image =
 	    SOIL_load_image(textureName, &texw, &texh, 0, SOIL_LOAD_RGB);
+	glGenTextures(1, &tex_handler);
+	glBindTexture(GL_TEXTURE_2D, tex_handler);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texw, texh, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	glGenTextures(1, &texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 }
 
@@ -426,30 +428,34 @@ int main(int argc, char** argv) {
 	infobuf.Init();
 	lcubebuf.Init();
 
-	float backg = 0.6;
+	float backg = 0.0;
 	glClearColor(backg*.136, backg*.204, backg*.252, 0.5f);
 	projection = currentCamera->projectionMatrix(45., WT/HT, 0.1, visibility);
 
 	info.Init();
 
-	plane.FillIndexBuffer(&cubebuf, cubeProgram);
-	plane.FillBuffer(&cubebuf, cubeProgram);
-
-	cube.FillIndexBuffer(&cubebuf, cubeProgram);
-	grid.FillBuffer(&gridbuf, gridProgram);
-	cube.FillBuffer(&cubebuf, cubeProgram);
-
 	lsourceProgram.RegisterAttrib("incolor", 1);
 	lsourceProgram.RegisterAttrib("intense", 1);
 	lsourceProgram.RegisterAttrib("trans", 1);
+	lsourceProgram.RegisterAttrib("norm", 0);
+	lsourceProgram.RegisterAttrib("vertexPosition", 0);
 
 	cubeProgram.RegisterAttrib("lightamt", 1);
+	cubeProgram.RegisterAttrib("norm", 0);
+	cubeProgram.RegisterAttrib("vertexPosition", 0);
 	cubeProgram.RegisterAttrib("eye", 1);
 	cubeProgram.RegisterAttrib("trans", 1);
 	cubeProgram.RegisterAttrib("model", 1);
+	cubeProgram.RegisterAttrib("tex", 1);
+	cubeProgram.RegisterAttrib("inTexCoord", 1);
 
 	infoProgram.RegisterAttrib("trans", 1);
 
+	plane.FillIndexBuffer(&cubebuf, cubeProgram);
+	plane.FillBuffer(&cubebuf, cubeProgram);
+	cube.FillIndexBuffer(&cubebuf, cubeProgram);
+	cube.FillBuffer(&cubebuf, cubeProgram);
+	LoadTextures();
 	glutTimerFunc(40, timer, 0);
 	glutMainLoop();
 	return 0;
